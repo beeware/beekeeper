@@ -3,7 +3,6 @@ BeeKeeper
 
 Look after all the little worker bees.
 
-
 Getting started
 ---------------
 
@@ -13,6 +12,7 @@ To deploy a new BeeKeeper instance, clone this repo, and then run::
     $ git push heroku master
     $ heroku addons:create heroku-postgresql:hobby-dev
     $ heroku addons:create heroku-redis:hobby-dev
+    $ heroku scale worker=1
     $ heroku run ./manage.py migrate
     $ heroku run ./manage.py createsuperuser
 
@@ -49,5 +49,22 @@ Sign up for a Sendgrid account, then get an API key. Set that key on Heroku::
 and put::
 
     SENDGRID_API_KEY=<your key here>
+
+In the .env file in the project home directory.
+
+Amazon AWS
+~~~~~~~~~~
+
+Log into (or sign up for) your Amazon AWS account:
+
+Set that key on Heroku::
+
+    $ heroku config:set AWS_ACCESS_KEY_ID=<your key here>
+    $ heroku config:set AWS_SECRET_ACCESS_KEY=<your secret key here>
+
+and put::
+
+    AWS_ACCESS_KEY_ID=<your key here>
+    AWS_SECRET_ACCESS_KEY=<your secret key here>
 
 In the .env file in the project home directory.
