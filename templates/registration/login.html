@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="container">
+    <form method='POST' action='.' class="form-signin">{% csrf_token %}
+        <h2 class="form-signin-heading">BeeKeepers</h2>
+        {% for error in form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+        {% endfor %}
+        {% for error in form.username.errors %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+        {% endfor %}
+        <label for="inputEmail" class="sr-only">Email address</label>
+        <input type="email" id="id_username" name="username" class="form-control" placeholder="Email address" required="" autofocus="">
+        {% for error in form.password.errors %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+        {% endfor %}
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input type="password" id="id_password" name="password" class="form-control" placeholder="Password" required="">
+
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        <p><a href="{% url 'password_reset' %}">I don't know my password</a><p>
+    </form>
+</div>
+{% endblock %}
