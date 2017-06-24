@@ -30,8 +30,8 @@ def webhook(request):
     if header_signature is None:
         return HttpResponseForbidden('Permission denied.')
 
-    sha_name, signature = header_signature.split(b'=')
-    if sha_name != b'sha1':
+    sha_name, signature = header_signature.split('=')
+    if sha_name != 'sha1':
         return HttpResponseServerError('Operation not supported.', status=501)
 
     mac = hmac.new(
@@ -39,7 +39,7 @@ def webhook(request):
         msg=request.body,
         digestmod=sha1
     )
-    if not hmac.compare_digest(mac.hexdigest().encode('utf-8'), signature):
+    if not hmac.compare_digest(mac.hexdigest().encode('utf-8'), signature.encode('utf-8')):
         return HttpResponseForbidden('Permission denied.')
 
     # If request reached this point we are in a good shape
