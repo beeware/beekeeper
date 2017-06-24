@@ -10,3 +10,4 @@ django_rq==0.9.5
 django-storages==1.5.2
 boto3==1.4.4
 sendgrid_django==4.0.4
+requests==2.18.1

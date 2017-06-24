@@ -24,5 +24,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^accounts/', include('django.contrib.auth.urls')),
 
+    url(r'^github/', include('github.urls', namespace='github')),
+
     url(r'^$', beekeeper.home, name='home')
 ]

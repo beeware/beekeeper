@@ -176,3 +176,6 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 # Sendgrid
 EMAIL_BACKEND = "sgbackend.SendGridBackend"
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+
+# Github
+GITHUB_WEBHOOK_KEY = os.environ.get('GITHUB_WEBHOOK_KEY')
