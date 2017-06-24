@@ -1,7 +1,6 @@
 import hmac
 from hashlib import sha1
 import json
-import urllib
 
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError
@@ -47,7 +46,10 @@ def webhook(request):
     # Process the GitHub events
     event = request.META.get('HTTP_X_GITHUB_EVENT', 'ping')
 
-    payload = json.loads(urllib.parse.unquote(request.body.decode('utf-8')))
+    print('request.body=', type(request.body), request.body[100:])
+    content = urllib.parse.unquote(request.body.decode('utf-8'))
+    print('content=', type(content), content[100:])
+    payload = json.loads(content)
     if event == 'ping':
         print("GITHUB PONG", payload)
         return HttpResponse('OK')
