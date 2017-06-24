@@ -12,6 +12,8 @@ from django.views.decorators.http import require_POST
 import requests
 from ipaddress import ip_address, ip_network
 
+from github import hooks
+
 
 @require_POST
 @csrf_exempt
@@ -48,15 +50,11 @@ def webhook(request):
     # Process the GitHub events
     event = request.META.get('HTTP_X_GITHUB_EVENT', 'ping')
     content = urllib.parse.unquote(request.body.decode('utf-8'))
+
     # Remove the payload= prefix
     payload = json.loads(content[8:])
-    if event == 'ping':
-        print("GITHUB PONG", payload)
-        return HttpResponse('OK')
-    elif event == 'push':
-        # Deploy some code for example
-        print("GITHUB PUSH")
-        return HttpResponse('OK')
-
-    # In case we receive an event that's not ping or push
-    return HttpResponse(status=204)
+    try:
+        return HttpResponse(hooks[event](payload))
+    except KeyError:
+        # In case we receive an event that's not handled
+        return HttpResponse(status=204)
