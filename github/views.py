@@ -47,11 +47,9 @@ def webhook(request):
     # If request reached this point we are in a good shape
     # Process the GitHub events
     event = request.META.get('HTTP_X_GITHUB_EVENT', 'ping')
-
-    print('request.body=', type(request.body), request.body)
     content = urllib.parse.unquote(request.body.decode('utf-8'))
-    print('content=', type(content), content)
-    payload = json.loads(content)
+    # Remove the payload= prefix
+    payload = json.loads(content[8:])
     if event == 'ping':
         print("GITHUB PONG", payload)
         return HttpResponse('OK')
