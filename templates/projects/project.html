@@ -16,7 +16,7 @@
         <tbody>
     {% for build in builds %}
             <tr scope="row">
-                <td><a href="{{ build.get_absolute_url }}">{{ build.pk }}</a></td>
+                <td><a href="{{ build.get_absolute_url }}">Build #{{ build.pk }}</a></td>
                 <td>{{ build.get_result_display }}</td>
                 <td><a href="{{ build.pull_request.html_url }}">#{{ build.pull_request.number }}</a></td>
                 <td>{{ build.pull_request.title }}</td>

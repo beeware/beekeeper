@@ -91,7 +91,7 @@ class Build(models.Model):
         ordering = ('-created',)
 
     def get_absolute_url(self):
-        return reverse('projects:project', kwargs={
+        return reverse('projects:build', kwargs={
                 'owner': self.project.repository.owner.login,
                 'repo_name': self.project.repository.name,
                 'build_pk': self.pk
