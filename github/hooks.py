@@ -62,6 +62,7 @@ def pull_request_handler(payload):
     pr.diff_url = pr_data['diff_url']
     pr.patch_url = pr_data['patch_url']
     pr.state = PullRequest.STATE_VALUES[pr_data['state']]
+    pr.title = pr_data['title']
     pr.save()
 
     if payload['action'] in ['opened', 'synchronize']:
