@@ -8,7 +8,7 @@ if __name__ == "__main__":
         with open('.env') as envfile:
             for line in envfile:
                 if line.strip() and not line.startswith('#'):
-                    key, value = line.strip().split('=')
+                    key, value = line.strip().split('=', 1)
                     os.environ.setdefault(key.strip(), value.strip())
     except FileNotFoundError:
         pass
