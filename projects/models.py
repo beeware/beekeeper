@@ -92,8 +92,8 @@ class Build(models.Model):
 
     def get_absolute_url(self):
         return reverse('projects:project', kwargs={
-                'owner': self.repository.owner.login,
-                'repo_name': self.repository.name,
+                'owner': self.project.repository.owner.login,
+                'repo_name': self.project.repository.name,
                 'build_id': self.pk
             })
 
