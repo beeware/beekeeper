@@ -48,14 +48,28 @@ class Repository(models.Model):
         return '%s/%s' % (self.owner.login, self.name)
 
 
+
+class PullRequestQuerySet(models.QuerySet):
+    def open(self):
+        return self.filter(state=PullRequest.STATE_OPEN)
+
+    def closed(self):
+        return self.filter(state=PullRequest.STATE_CLOSED)
+
+
 class PullRequest(models.Model):
     STATE_OPEN = 10
+    STATE_CLOSED = 100
     STATE_CHOICES = [
         (STATE_OPEN, 'Open'),
+        (STATE_CLOSED, 'Closed'),
     ]
     STATE_VALUES = {
         'open': STATE_OPEN,
+        'closed': STATE_CLOSED,
     }
+
+    objects = PullRequestQuerySet.as_manager()
 
     repository = models.ForeignKey(Repository, related_name='pull_requests')
     number = models.IntegerField(db_index=True)

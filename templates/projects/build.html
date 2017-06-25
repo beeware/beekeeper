@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
   <div>
-    <h1><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.full_name }} - Build #{{ build.pk }}</h1>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ project.get_absolute_url }}"><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'projects:pull_request' owner=pull_request.repository.owner.login repo_name=pull_request.repository.name pr=pull_request.number %}"><img src="{{ pull_request.user.avatar_url }}" alt="Github avatar for {{ pull_request.user }}" class="avatar">#{{ pull_request.number }} - {{ pull_request.title }}</a></li>
+    </ol>
+    <h1>Build #{{ build.pk }}</h1>
 
     <dl>
         <dt>Build status</dt>

@@ -1,27 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
   <div>
-    <h1><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.full_name }}</h1>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    </ol>
+    <h1><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.name }} <a href="{{ project.repository.html_url }}"><i class="fa fa-github exit" aria-hidden="true"></i></a></h1>
 
     <table class="table">
         <thead>
             <tr>
-                <th>Build #</th>
-                <th>Result</th>
                 <th>Pull Request #</th>
+                <th>Author</th>
                 <th>Description</th>
-                <th>Status</th>
             </tr>
         </thead>
         <tbody>
-    {% for build in builds %}
-            <tr scope="row">
-                <td><a href="{{ build.get_absolute_url }}">Build #{{ build.pk }}</a></td>
-                <td>{{ build.get_result_display }}</td>
-                <td><a href="{{ build.pull_request.html_url }}">#{{ build.pull_request.number }}</a></td>
-                <td>{{ build.pull_request.title }}</td>
-                <td>{{ build.get_status_display }}</td>
-            </tr>
+    {% for pr in project.repository.pull_requests.open %}
+        <tr scope="row">
+            <td><a href="{% url 'projects:pull_request' owner=pr.repository.owner.login repo_name=pr.repository.name pr=pr.number %}">PR #{{ pr.number }}</a></td>
+            <td><img src="{{ pr.user.avatar_url }}" alt="Github avatar for {{ pr.user }}" class="avatar">{{ pr.user }}</td>
+            <td>{{ pr.title }}</td>
+        </tr>
     {% endfor %}
         </tbody>
   </table>

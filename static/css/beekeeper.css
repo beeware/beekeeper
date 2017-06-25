@@ -80,4 +80,13 @@ div.container {
 
 .avatar {
   width: 2em;
+  margin-right: 0.5em;
+}
+
+/**************************************
+ * Exit links
+ **************************************/
+
+.exit {
+  margin-left: 1em;
 }

@@ -40,6 +40,9 @@ class Project(models.Model):
     class Meta:
         ordering = ('repository__name',)
 
+    def __str__(self):
+        return self.repository.full_name
+
     def get_absolute_url(self):
         return reverse('projects:project', kwargs={
                 'owner': self.repository.owner.login,
@@ -94,6 +97,7 @@ class Build(models.Model):
         return reverse('projects:build', kwargs={
                 'owner': self.project.repository.owner.login,
                 'repo_name': self.project.repository.name,
+                'pr': self.pull_request.number,
                 'build_pk': self.pk
             })
 
