@@ -46,13 +46,20 @@ def webhook(request):
     if not hmac.compare_digest(mac.hexdigest().encode('utf-8'), signature.encode('utf-8')):
         return HttpResponseForbidden('Permission denied.')
 
-    # If request reached this point we are in a good shape
-    # Process the GitHub events
+    # Get the event type
     event = request.META.get('HTTP_X_GITHUB_EVENT', 'ping')
-    content = urllib.parse.unquote(request.body.decode('utf-8'))
 
-    # Remove the payload= prefix
-    payload = json.loads(content[8:])
+    # Decode the payload
+    if request.content_type == 'application/x-www-form-urlencoded':
+        # Remove the payload= prefix and URL unquote
+        content = urllib.parse.unquote_plus(request.body.decode('utf-8'))
+        payload = json.loads(content[8:])
+    elif request.content_type == 'application/json':
+        content = request.body.decode('utf-8')
+        payload = json.loads(content)
+    else:
+        payload = None
+
     try:
         return HttpResponse(hooks[event](payload))
     except KeyError:
