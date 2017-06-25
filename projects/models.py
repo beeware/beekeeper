@@ -94,7 +94,7 @@ class Build(models.Model):
         return reverse('projects:project', kwargs={
                 'owner': self.project.repository.owner.login,
                 'repo_name': self.project.repository.name,
-                'build_id': self.pk
+                'build_pk': self.pk
             })
 
     def cancel(self):
