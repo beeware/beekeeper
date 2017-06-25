@@ -12,7 +12,6 @@
             <tr>
                 <th>Build #</th>
                 <th>Result</th>
-                <th>Title</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -21,7 +20,6 @@
             <tr scope="row">
                 <td><a href="{{ build.get_absolute_url }}">Build #{{ build.pk }}</a></td>
                 <td>{{ build.get_result_display }}</td>
-                <td>{{ build.pull_request.title }}</td>
                 <td>{{ build.get_status_display }}</td>
             </tr>
     {% endfor %}
