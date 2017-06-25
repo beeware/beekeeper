@@ -19,7 +19,7 @@ def project(request, owner, repo_name):
         })
 
 
-def build(request, owner, repo_name, build_id):
+def build(request, owner, repo_name, build_pk):
     try:
         project = Project.objects.get(
                         repository__owner__login=owner,
@@ -29,7 +29,7 @@ def build(request, owner, repo_name, build_id):
         raise Http404
 
     try:
-        build = Build.objects.get(project=project, build_id=build_id)
+        build = Build.objects.get(project=project, pk=build_pk)
     except Build.DoesNotExist:
         raise Http404
 
