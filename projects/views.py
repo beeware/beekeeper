@@ -14,7 +14,8 @@ def project(request, owner, repo_name):
         raise Http404
 
     return render(request, 'projects/project.html', {
-            'project': project
+            'project': project,
+            'builds': project.builds.all()
         })
 
 
