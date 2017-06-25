@@ -16,6 +16,22 @@ To deploy a new BeeKeeper instance, clone this repo, and then run::
     $ heroku run ./manage.py migrate
     $ heroku run ./manage.py createsuperuser
 
+Django
+~~~~~~
+
+Configure a `SECRET_KEY` for the Django instance
+
+    >>> from django.core.management.utils import get_random_secret_key
+    >>> get_random_secret_key()
+    'qn219x$#ox1$+(m4hdzi-q+5g&o9^7)(x5l8^y51+rrcvs*o3-'
+
+Then set a `SECRET_KEY` configuration variable in your Heroku instance, and
+put::
+
+    SECRET_KEY=<your key here>
+
+in the .env file inthe project home directory.
+
 Github
 ~~~~~~
 
@@ -28,25 +44,18 @@ generate one::
     >>> get_random_string(50)
     'nuiVypAArY7lFDgMdyC5kwutDGQdDc6rXljuIcI5iBttpPebui'
 
-Once the webhook has been created, set the GITHUB_WEBHOOK_KEY variable to this
-string::
-
-    $ heroku config:set GITHUB_WEBHOOK_KEY=<your key here>
-
-and put::
+Once the webhook has been created, create a `GITHUB_WEBHOOK_KEY` Heroku
+configuration variable to this string, and put::
 
     GITHUB_WEBHOOK_KEY=<your key here>
 
-In the .env file in the project home directory.
+in the .env file in the project home directory.
 
 Sendgrid
 ~~~~~~~~
 
-Sign up for a Sendgrid account, then get an API key. Set that key on Heroku::
-
-    $ heroku config:set SENDGRID_API_KEY=<your key here>
-
-and put::
+Sign up for a Sendgrid account, then get an API key. Create a
+`SENDGRID_API_KEY` configuration value on Heroku, and put::
 
     SENDGRID_API_KEY=<your key here>
 
@@ -55,14 +64,9 @@ In the .env file in the project home directory.
 Amazon AWS
 ~~~~~~~~~~
 
-Log into (or sign up for) your Amazon AWS account:
-
-Set that key on Heroku::
-
-    $ heroku config:set AWS_ACCESS_KEY_ID=<your key here>
-    $ heroku config:set AWS_SECRET_ACCESS_KEY=<your secret key here>
-
-and put::
+Log into (or sign up for) your Amazon AWS account, and obtain an access key
+and secret access key. Create the `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY` Heroku configuration variables, and put::
 
     AWS_ACCESS_KEY_ID=<your key here>
     AWS_SECRET_ACCESS_KEY=<your secret key here>
