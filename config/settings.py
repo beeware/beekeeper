@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django_rq',
     'rhouser',
 
+    'github',
 ]
 
 MIDDLEWARE = [

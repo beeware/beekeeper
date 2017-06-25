@@ -1,8 +1,6 @@
-
-def ping_handler(payload):
-    "A handler for the Github Ping message"
-    return 'OK'
+from .hooks import ping_handler, pull_request_handler
 
 hooks = {
-    'ping': ping_handler
+    'ping': ping_handler,
+    'pull_request': pull_request_handler,
 }
