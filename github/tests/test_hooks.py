@@ -42,6 +42,7 @@ class HookTests(TestCase):
         self.assertEqual(pr.user, submitter)
         self.assertEqual(pr.repository, repo)
         self.assertEqual(pr.number, 1)
+        self.assertEqual(pr.title, 'Test of a pull request from a fork.')
         self.assertEqual(pr.html_url, 'https://github.com/pybee/webhook-trigger/pull/1')
         self.assertEqual(pr.diff_url, 'https://github.com/pybee/webhook-trigger/pull/1.diff')
         self.assertEqual(pr.patch_url, 'https://github.com/pybee/webhook-trigger/pull/1.patch')
@@ -123,8 +124,8 @@ class HookTests(TestCase):
         self.assert_postconditions(extra_users=1)
 
         old_owner = GithubUser.objects.get(github_id=999)
-        self.assertEqual(old_owner.github_repositories.count(), 0)
-        self.assertEqual(old_owner.github_pull_requests.count(), 0)
+        self.assertEqual(old_owner.repositories.count(), 0)
+        self.assertEqual(old_owner.pull_requests.count(), 0)
 
     def test_existing_pull_request(self):
         # Preconditions - an existing pull request.
@@ -158,6 +159,7 @@ class HookTests(TestCase):
             user=submitter,
             repository=repo,
             number=42,
+            title="pr title",
             html_url='http://example.com/pr/42',
             diff_url='http://example.com/pr/42.diff',
             patch_url='http://example.com/pr/42.patch',

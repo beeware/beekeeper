@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^accounts/', include('django.contrib.auth.urls')),
 
     url(r'^github/', include('github.urls', namespace='github')),
+    url(r'^projects/', include('projects.urls', namespace='projects')),
 
     url(r'^$', beekeeper.home, name='home')
 ]

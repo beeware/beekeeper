@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+  <div>
+    <h1><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.full_name }}</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Build #</th>
+                <th>Result</th>
+                <th>Pull Request #</th>
+                <th>Description</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+    {% for build in builds %}
+            <tr scope="row">
+                <td>{{ build.id }}</td>
+                <td>{{ build.get_result_display }}</td>
+                <td><a href="{{ build.pull_request.html_url }}">#{{ build.pull_request.number }}</a></td>
+                <td>{{ build.pull_request.title }}</td>
+                <td>{{ build.get_status_display }}</td>
+            </tr>
+    {% endfor %}
+        </tbody>
+  </table>
+{% endblock %}

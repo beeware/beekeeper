@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class RepositoryConfig(AppConfig):
-    name = 'repository'
+class GithubConfig(AppConfig):
+    name = 'github'
 

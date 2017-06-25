@@ -27,7 +27,7 @@ class User(models.Model):
 
 
 class Repository(models.Model):
-    owner = models.ForeignKey(User, related_name='github_repositories')
+    owner = models.ForeignKey(User, related_name='repositories')
     name = models.CharField(max_length=100, db_index=True)
     github_id = models.IntegerField(db_index=True)
 
@@ -57,14 +57,15 @@ class PullRequest(models.Model):
         'open': STATE_OPEN,
     }
 
-    repository = models.ForeignKey(Repository, related_name='github_pull_requests')
+    repository = models.ForeignKey(Repository, related_name='pull_requests')
     number = models.IntegerField(db_index=True)
     github_id = models.IntegerField(db_index=True)
 
     created = models.DateTimeField(default=timezone.now)
     updated = models.DateTimeField(auto_now=True)
 
-    user = models.ForeignKey(User, related_name='github_pull_requests')
+    user = models.ForeignKey(User, related_name='pull_requests')
+    title = models.CharField(max_length=100)
     html_url = models.URLField()
     diff_url = models.URLField()
     patch_url = models.URLField()
@@ -72,3 +73,5 @@ class PullRequest(models.Model):
 
     def __str__(self):
         return "PR %s on %s" % (self.number, self.repository)
+
+

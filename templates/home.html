@@ -2,5 +2,23 @@
 {% block content %}
   <div>
     <h1>BeeKeeper</h1>
-  </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Project</th>
+                <th># Pending builds</th>
+            </tr>
+        </thead>
+        <tbody>
+    {% for project in projects %}
+            <tr scope="row">
+                <td><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar"></td>
+                <td><a href="{{ project.get_absolute_url }}">{{ project.repository.full_name }}</a></td>
+                <td>{{ project.builds.pending.count }}</td>
+            </tr>
+    {% endfor %}
+        </tbody>
+  </table>
 {% endblock %}

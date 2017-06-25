@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'rhouser',
 
     'github',
+    'projects',
 ]
 
 MIDDLEWARE = [

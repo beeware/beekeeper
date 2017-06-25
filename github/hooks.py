@@ -8,6 +8,7 @@ def pull_request_handler(payload):
     "A handler for pull request messages"
     # Make sure we have a record for the submitter of the PR
     from .models import User as GithubUser, Repository, PullRequest
+    from .signals import new_build
 
     user_data = payload['pull_request']['user']
     try:
@@ -62,5 +63,10 @@ def pull_request_handler(payload):
     pr.patch_url = pr_data['patch_url']
     pr.state = PullRequest.STATE_VALUES[pr_data['state']]
     pr.save()
+
+    if payload['action'] in ['opened', 'synchronize']:
+        new_build.send(sender=PullRequest, pull_request=pr)
+    # elif payload['action'] == 'closed'
+    #     ...
 
     return 'OK'

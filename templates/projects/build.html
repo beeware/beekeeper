@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+  <div>
+    <h1><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.full_name }} - Build #{{ build.pk }}</h1>
+
+    <dl>
+        <dt>Build status</dt>
+        <dd>{{ build.get_status_display }}</dd>
+
+        <dt>Build result</dt>
+        <dd>{{ build.get_result_display }}</dd>
+
+    </dl>
+{% endblock %}
