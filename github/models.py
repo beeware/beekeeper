@@ -27,7 +27,7 @@ class User(models.Model):
 
 
 class Repository(models.Model):
-    owner = models.ForeignKey(User)
+    owner = models.ForeignKey(User, related_name='github_repositories')
     name = models.CharField(max_length=100, db_index=True)
     github_id = models.IntegerField(db_index=True)
 
@@ -57,15 +57,17 @@ class PullRequest(models.Model):
         'open': STATE_OPEN,
     }
 
-    repository = models.ForeignKey(Repository)
+    repository = models.ForeignKey(Repository, related_name='github_pull_requests')
     number = models.IntegerField(db_index=True)
     github_id = models.IntegerField(db_index=True)
 
     created = models.DateTimeField(default=timezone.now)
     updated = models.DateTimeField(auto_now=True)
 
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, related_name='github_pull_requests')
     html_url = models.URLField()
+    diff_url = models.URLField()
+    patch_url = models.URLField()
     state = models.IntegerField(choices=STATE_CHOICES, default=STATE_OPEN)
 
     def __str__(self):

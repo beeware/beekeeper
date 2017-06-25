@@ -15,10 +15,10 @@ def pull_request_handler(payload):
     except GithubUser.DoesNotExist:
         submitter = GithubUser(github_id=user_data['id'])
 
-    submitter.login = user_data['login'],
-    submitter.avatar_url = user_data['avatar_url'],
-    submitter.html_url = user_data['html_url'],
-    submitter.user_type = GithubUser.USER_TYPE_VALUES[user_data['type']],
+    submitter.login = user_data['login']
+    submitter.avatar_url = user_data['avatar_url']
+    submitter.html_url = user_data['html_url']
+    submitter.user_type = GithubUser.USER_TYPE_VALUES[user_data['type']]
     submitter.save()
 
     # Make sure we have a record for the repository owner
@@ -28,10 +28,10 @@ def pull_request_handler(payload):
     except GithubUser.DoesNotExist:
         owner = GithubUser(github_id=user_data['id'])
 
-    owner.login = user_data['login'],
-    owner.avatar_url = user_data['avatar_url'],
-    owner.html_url = user_data['html_url'],
-    owner.user_type = GithubUser.USER_TYPE_VALUES[user_data['type']],
+    owner.login = user_data['login']
+    owner.avatar_url = user_data['avatar_url']
+    owner.html_url = user_data['html_url']
+    owner.user_type = GithubUser.USER_TYPE_VALUES[user_data['type']]
     owner.save()
 
     # Make sure we have a record for the repository
@@ -45,6 +45,7 @@ def pull_request_handler(payload):
     repo.name = repo_data['name']
     repo.html_url = repo_data['html_url']
     repo.description = repo_data['description']
+    repo.save()
 
     # Make sure we have a record for the PR
     pr_data = payload['pull_request']
@@ -54,7 +55,12 @@ def pull_request_handler(payload):
         pr = PullRequest(github_id=pr_data['id'])
 
     pr.user = submitter
+    pr.repository = repo
+    pr.number = pr_data['number']
     pr.html_url = pr_data['html_url']
+    pr.diff_url = pr_data['diff_url']
+    pr.patch_url = pr_data['patch_url']
     pr.state = PullRequest.STATE_VALUES[pr_data['state']]
+    pr.save()
 
     return 'OK'
