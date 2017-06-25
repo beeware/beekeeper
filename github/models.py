@@ -37,6 +37,9 @@ class Repository(models.Model):
     html_url = models.URLField()
     description = models.CharField(max_length=500)
 
+    class Meta:
+        verbose_name_plural = 'repositories'
+
     def __str__(self):
         return "Github repository %s" % self.full_name
 

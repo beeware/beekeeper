@@ -18,7 +18,7 @@ def pull_request_handler(payload):
     submitter.login = user_data['login'],
     submitter.avatar_url = user_data['avatar_url'],
     submitter.html_url = user_data['html_url'],
-    submitter.user_type = GithubUser.USER_TYPE_VALUE[user_data['type']],
+    submitter.user_type = GithubUser.USER_TYPE_VALUES[user_data['type']],
     submitter.save()
 
     # Make sure we have a record for the repository owner
@@ -31,7 +31,7 @@ def pull_request_handler(payload):
     owner.login = user_data['login'],
     owner.avatar_url = user_data['avatar_url'],
     owner.html_url = user_data['html_url'],
-    owner.user_type = GithubUser.USER_TYPE_VALUE[user_data['type']],
+    owner.user_type = GithubUser.USER_TYPE_VALUES[user_data['type']],
     owner.save()
 
     # Make sure we have a record for the repository
