@@ -42,8 +42,8 @@ def get_or_create_repository(repo_data):
     return repo
 
 
-def pull_handler(payload):
-    "A handler for Github pull messages"
+def push_handler(payload):
+    "A handler for Github push messages"
     from .models import Commit
     from .signals import new_build
 

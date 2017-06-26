@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from ..models import User as GithubUser, Repository, PullRequest, Commit
 
-from ..hooks import pull_request_handler, pull_handler
+from ..hooks import pull_request_handler, push_handler
 
 
 class PullRequestHookTests(TestCase):
@@ -196,7 +196,7 @@ class PullHookTests(TestCase):
 
     def test_standalone_commit(self):
         # Handle the pull request
-        pull_handler(self.pull_payload)
+        push_handler(self.pull_payload)
 
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
@@ -214,13 +214,13 @@ class PullHookTests(TestCase):
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(Commit.objects.count(), 1)
 
-        pull_handler(self.pull_payload)
+        push_handler(self.pull_payload)
 
         self.assert_postconditions()
 
     def test_merge_commit_before_pr(self):
         # Handle the pull request
-        pull_handler(self.pull_payload)
+        push_handler(self.pull_payload)
 
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
