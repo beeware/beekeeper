@@ -62,6 +62,7 @@ def push_handler(payload):
 
     commit.repository = repo
     commit.user = user
+    commit.branch = payload['ref'].rsplit('/', 1)[1]
     commit.message = commit_data['message']
     commit.url = commit_data['url']
     commit.save()
@@ -91,6 +92,7 @@ def pull_request_handler(payload):
             repository=repo,
             sha=commit_sha,
             user=submitter,
+            branch=payload['pull_request']['head']['ref'],
             url='https://github.com/%s/%s/commit/%s' % (
                 repo.owner.login,
                 repo.name,

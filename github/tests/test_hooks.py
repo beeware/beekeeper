@@ -39,6 +39,11 @@ class PullRequestHookTests(TestCase):
         self.assertEqual(repo.html_url, 'https://github.com/pybee/webhook-trigger')
         self.assertEqual(repo.description, 'A test repository that can be used to test Github web hooks')
 
+        commit = Commit.objects.get(sha='936ce824549a2a794df739c1ffab91f5644d812b')
+        self.assertEqual(commit.user.login, 'freakboy3742')
+        self.assertEqual(commit.branch, 'prtest')
+        self.assertEqual(commit.url, 'https://github.com/pybee/webhook-trigger/commit/936ce824549a2a794df739c1ffab91f5644d812b')
+
         pr = PullRequest.objects.get(github_id=127348414)
         self.assertEqual(pr.user, submitter)
         self.assertEqual(pr.repository, repo)
@@ -48,6 +53,7 @@ class PullRequestHookTests(TestCase):
         self.assertEqual(pr.diff_url, 'https://github.com/pybee/webhook-trigger/pull/1.diff')
         self.assertEqual(pr.patch_url, 'https://github.com/pybee/webhook-trigger/pull/1.patch')
         self.assertEqual(pr.state, PullRequest.STATE_OPEN)
+
 
     def test_clean_db(self):
         # Preconditions - a clean database
@@ -162,7 +168,9 @@ class PullRequestHookTests(TestCase):
         commit = Commit.objects.create(
             repository=repo,
             user=owner,
-            sha='936ce824549a2a794df739c1ffab91f5644d812b'
+            branch='prtest',
+            sha='936ce824549a2a794df739c1ffab91f5644d812b',
+            url='https://github.com/pybee/webhook-trigger/commit/936ce824549a2a794df739c1ffab91f5644d812b'
         )
 
         PullRequest.objects.create(
@@ -198,6 +206,7 @@ class PullHookTests(TestCase):
     def assert_postconditions(self):
         commit = Commit.objects.get(sha='02bc552855735a0a4f74bfe2d8d2011bc003460c')
         self.assertEqual(commit.user.login, 'freakboy3742')
+        self.assertEqual(commit.branch, 'master')
         self.assertEqual(commit.message, 'Merge pull request #2 from freakboy3742/closed_pr\n\nAdded content that can be merged.')
         self.assertEqual(commit.url, 'https://github.com/pybee/webhook-trigger/commit/02bc552855735a0a4f74bfe2d8d2011bc003460c')
 

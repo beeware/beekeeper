@@ -50,6 +50,7 @@ class Repository(models.Model):
 
 class Commit(models.Model):
     repository = models.ForeignKey(Repository, related_name='commits')
+    branch = models.CharField(max_length=100, db_index=True)
     sha = models.CharField(max_length=40, db_index=True)
     user = models.ForeignKey(User, related_name='commits')
 
