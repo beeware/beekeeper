@@ -48,6 +48,28 @@ class Repository(models.Model):
         return '%s/%s' % (self.owner.login, self.name)
 
 
+class Commit(models.Model):
+    repository = models.ForeignKey(Repository, related_name='commits')
+    sha = models.CharField(max_length=40, db_index=True)
+    user = models.ForeignKey(User, related_name='commits')
+
+    created = models.DateTimeField(default=timezone.now)
+    updated = models.DateTimeField(auto_now=True)
+
+    message = models.TextField()
+    url = models.URLField()
+
+    def __str__(self):
+        return "Commit %s on %s" % (self.sha, self.repository)
+
+    @property
+    def display_sha(self):
+        return self.sha[:8]
+
+    @property
+    def title(self):
+        return self.message.split('\n', 1)[0]
+
 
 class PullRequestQuerySet(models.QuerySet):
     def open(self):
@@ -83,9 +105,8 @@ class PullRequest(models.Model):
     html_url = models.URLField()
     diff_url = models.URLField()
     patch_url = models.URLField()
+    merge_commit = models.ForeignKey(Commit, related_name='pull_requests', null=True)
     state = models.IntegerField(choices=STATE_CHOICES, default=STATE_OPEN)
 
     def __str__(self):
         return "PR %s on %s" % (self.number, self.repository)
-
-

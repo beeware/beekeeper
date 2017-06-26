@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from .models import User, Repository, PullRequest
+from .models import User, Repository, Commit, PullRequest
 
 
 @admin.register(User)
@@ -25,11 +25,21 @@ class RepositoryAdmin(admin.ModelAdmin):
     avatar.short_description = 'Avatar'
 
 
+@admin.register(Commit)
+class CommitAdmin(admin.ModelAdmin):
+    list_display = ['sha', 'repository', 'user', 'avatar']
+    raw_id_fields = ['repository', 'user']
+
+    def avatar(self, pr):
+        return mark_safe('<img src="%s" style="width: 32px" alt="Github avatar">' % pr.user.avatar_url)
+    avatar.short_description = 'Avatar'
+
+
 @admin.register(PullRequest)
 class PullRequestAdmin(admin.ModelAdmin):
     list_display = ['number', 'repository', 'user', 'avatar', 'state']
     list_filter = ['state']
-    raw_id_fields = ['repository', 'user']
+    raw_id_fields = ['repository', 'user', 'merge_commit']
 
     def avatar(self, pr):
         return mark_safe('<img src="%s" style="width: 32px" alt="Github avatar">' % pr.user.avatar_url)

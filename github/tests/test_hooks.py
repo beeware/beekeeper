@@ -3,21 +3,22 @@ import os
 
 from django.test import TestCase
 
-from ..models import User as GithubUser, Repository, PullRequest
+from ..models import User as GithubUser, Repository, PullRequest, Commit
 
-from ..hooks import pull_request_handler
+from ..hooks import pull_request_handler, pull_handler
 
 
-class HookTests(TestCase):
+class PullRequestHookTests(TestCase):
     def setUp(self):
-        with open(os.path.join(os.path.dirname(__file__), 'pr_1.json')) as pr1_file:
-            self.payload = json.load(pr1_file)
+        with open(os.path.join(os.path.dirname(__file__), 'pr_1.json')) as pr_file:
+            self.payload = json.load(pr_file)
 
     def assert_postconditions(self, extra_users=0):
         # Postcondition - 2 users, 1 repo, 1 PR.
         self.assertEqual(GithubUser.objects.count(), 2 + extra_users)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(Commit.objects.count(), 0)
 
         # Check some properties of the created objects.
         submitter = GithubUser.objects.get(login='freakboy3742')
@@ -53,6 +54,7 @@ class HookTests(TestCase):
         self.assertEqual(GithubUser.objects.count(), 0)
         self.assertEqual(Repository.objects.count(), 0)
         self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 0)
 
         pull_request_handler(self.payload)
 
@@ -72,6 +74,7 @@ class HookTests(TestCase):
         self.assertEqual(GithubUser.objects.count(), 1)
         self.assertEqual(Repository.objects.count(), 0)
         self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 0)
 
         pull_request_handler(self.payload)
 
@@ -91,6 +94,7 @@ class HookTests(TestCase):
         self.assertEqual(GithubUser.objects.count(), 1)
         self.assertEqual(Repository.objects.count(), 0)
         self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 0)
 
         pull_request_handler(self.payload)
 
@@ -118,6 +122,7 @@ class HookTests(TestCase):
         self.assertEqual(GithubUser.objects.count(), 1)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 0)
 
         pull_request_handler(self.payload)
 
@@ -168,7 +173,67 @@ class HookTests(TestCase):
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(Commit.objects.count(), 0)
 
         pull_request_handler(self.payload)
 
         self.assert_postconditions()
+
+
+class PullHookTests(TestCase):
+    def setUp(self):
+        with open(os.path.join(os.path.dirname(__file__), 'pr_2.json')) as pr_file:
+            self.pull_request_payload = json.load(pr_file)
+
+        with open(os.path.join(os.path.dirname(__file__), 'pull_1.json')) as pull_file:
+            self.pull_payload = json.load(pull_file)
+
+    def assert_postconditions(self):
+        commit = Commit.objects.get(sha='02bc552855735a0a4f74bfe2d8d2011bc003460c')
+        self.assertEqual(commit.user.login, 'freakboy3742')
+        self.assertEqual(commit.message, 'Merge pull request #2 from freakboy3742/closed_pr\n\nAdded content that can be merged.')
+        self.assertEqual(commit.url, 'https://github.com/pybee/webhook-trigger/commit/02bc552855735a0a4f74bfe2d8d2011bc003460c')
+
+    def test_standalone_commit(self):
+        # Handle the pull request
+        pull_handler(self.pull_payload)
+
+        self.assertEqual(GithubUser.objects.count(), 2)
+        self.assertEqual(Repository.objects.count(), 1)
+        self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 1)
+
+        self.assert_postconditions()
+
+    def test_merge_commit(self):
+        # Handle the pull request
+        pull_request_handler(self.pull_request_payload)
+
+        self.assertEqual(GithubUser.objects.count(), 2)
+        self.assertEqual(Repository.objects.count(), 1)
+        self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(Commit.objects.count(), 1)
+
+        pull_handler(self.pull_payload)
+
+        self.assert_postconditions()
+
+    def test_merge_commit_before_pr(self):
+        # Handle the pull request
+        pull_handler(self.pull_payload)
+
+        self.assertEqual(GithubUser.objects.count(), 2)
+        self.assertEqual(Repository.objects.count(), 1)
+        self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 1)
+
+        pull_request_handler(self.pull_request_payload)
+
+        # No extra commit is created.
+        self.assertEqual(GithubUser.objects.count(), 2)
+        self.assertEqual(Repository.objects.count(), 1)
+        self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(Commit.objects.count(), 1)
+
+        self.assert_postconditions()
+

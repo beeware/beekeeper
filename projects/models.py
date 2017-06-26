@@ -2,7 +2,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
-from github.models import Repository, PullRequest
+from github.models import Repository, Commit, PullRequest
 
 
 class ProjectQuerySet(models.QuerySet):
@@ -49,6 +49,13 @@ class Project(models.Model):
                 'repo_name': self.repository.name,
             })
 
+    @property
+    def current_commit(self):
+        try:
+            return self.repository.commits.latest('created')
+        except Commit.DoesNotExist:
+            return None
+
 
 class BuildQuerySet(models.QuerySet):
     def pending(self):
@@ -83,7 +90,8 @@ class Build(models.Model):
     objects = BuildQuerySet.as_manager()
 
     project = models.ForeignKey(Project, related_name='builds')
-    pull_request = models.ForeignKey(PullRequest, related_name='builds')
+    pull_request = models.ForeignKey(PullRequest, related_name='builds', null=True, blank=True)
+    commit = models.ForeignKey(Commit, related_name='builds', null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_CREATED)
     result = models.IntegerField(choices=RESULT_CHOICES, default=RESULT_PENDING)
 
@@ -94,12 +102,19 @@ class Build(models.Model):
         ordering = ('-created',)
 
     def get_absolute_url(self):
+        if self.pull_request:
+            return reverse('projects:build', kwargs={
+                    'owner': self.project.repository.owner.login,
+                    'repo_name': self.project.repository.name,
+                    'pr': self.pull_request.number,
+                    'build_pk': self.pk
+                })
         return reverse('projects:build', kwargs={
-                'owner': self.project.repository.owner.login,
-                'repo_name': self.project.repository.name,
-                'pr': self.pull_request.number,
-                'build_pk': self.pk
-            })
+                    'owner': self.project.repository.owner.login,
+                    'repo_name': self.project.repository.name,
+                    'sha': self.commit.sha,
+                    'build_pk': self.pk
+                })
 
     def cancel(self):
         if self.status == Build.STATUS_RUNNING:
