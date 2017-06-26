@@ -33,6 +33,6 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Build)
 class BuildAdmin(admin.ModelAdmin):
-    list_display = ['project', 'pull_request', 'status']
+    list_display = ['project', 'pull_request', 'commit', 'status']
     list_filter = ['status']
     raw_id_fields = ['project', 'pull_request', 'commit']

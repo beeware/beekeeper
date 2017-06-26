@@ -67,7 +67,7 @@ def push_handler(payload):
     commit.save()
 
     if not commit.pull_requests.exists():
-        new_build.send(sender=Commit, commit=commit)
+        new_build.send(sender=Commit, instance=commit)
 
     return 'OK'
 
@@ -122,7 +122,7 @@ def pull_request_handler(payload):
     pr.save()
 
     if payload['action'] in ['opened', 'synchronize']:
-        new_build.send(sender=PullRequest, pull_request=pr)
+        new_build.send(sender=PullRequest, instance=pr)
     # elif payload['action'] == 'closed'
     #     ...
 
