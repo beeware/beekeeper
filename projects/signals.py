@@ -12,9 +12,8 @@ def new_project(sender, instance, created, *args, **kwargs):
 
 def new_build(sender, pull_request=None, commit=None, *args, **kwargs):
     try:
-        project = Project.objects.get(repository=pull_request.repository)
-
         if pull_request:
+            project = Project.objects.get(repository=pull_request.repository)
             # If the project is active, cancel all pending
             # builds on this PR.
             if project.status == Project.STATUS_ACTIVE:
@@ -31,6 +30,7 @@ def new_build(sender, pull_request=None, commit=None, *args, **kwargs):
                 )
         else:
             # If the project is active, create a new build.
+            project = Project.objects.get(repository=commit.repository)
             if project.status == Project.STATUS_ACTIVE:
                 Build.objects.create(
                     project=project,
