@@ -105,7 +105,7 @@ class PullRequest(models.Model):
     html_url = models.URLField()
     diff_url = models.URLField()
     patch_url = models.URLField()
-    merge_commit = models.ForeignKey(Commit, related_name='pull_requests', null=True)
+    commit = models.ForeignKey(Commit, related_name='pull_requests')
     state = models.IntegerField(choices=STATE_CHOICES, default=STATE_OPEN)
 
     def __str__(self):

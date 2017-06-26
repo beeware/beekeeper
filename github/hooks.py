@@ -85,23 +85,24 @@ def pull_request_handler(payload):
 
     # If this is a merge commit, make sure we have a record for
     # the commit.
-    merge_commit_sha = payload['pull_request']['merge_commit_sha']
-    if merge_commit_sha:
-        try:
-            merge_commit = Commit.objects.get(sha=merge_commit_sha)
-        except Commit.DoesNotExist:
-            merge_commit = Commit.objects.create(
-                repository=repo,
-                sha=merge_commit_sha,
-                user=submitter,
-                url='https://github.com/%s/%s/commit/%s' % (
-                    repo.owner.login,
-                    repo.name,
-                    merge_commit_sha
-                )
-            )
+    if payload['pull_request']['merge_commit_sha']:
+        commit_sha = payload['pull_request']['merge_commit_sha']
     else:
-        merge_commit = None
+        commit_sha = payload['pull_request']['head']['sha']
+
+    try:
+        commit = Commit.objects.get(sha=commit_sha)
+    except Commit.DoesNotExist:
+        commit = Commit.objects.create(
+            repository=repo,
+            sha=commit_sha,
+            user=submitter,
+            url='https://github.com/%s/%s/commit/%s' % (
+                repo.owner.login,
+                repo.name,
+                commit_sha
+            )
+        )
 
     # Make sure we have a record for the PR
     pr_data = payload['pull_request']
@@ -116,7 +117,7 @@ def pull_request_handler(payload):
     pr.html_url = pr_data['html_url']
     pr.diff_url = pr_data['diff_url']
     pr.patch_url = pr_data['patch_url']
-    pr.merge_commit = merge_commit
+    pr.commit = commit
     pr.state = PullRequest.STATE_VALUES[pr_data['state']]
     pr.title = pr_data['title']
     pr.save()

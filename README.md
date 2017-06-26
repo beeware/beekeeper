@@ -51,6 +51,16 @@ configuration variable to this string, and put::
 
 in the .env file in the project home directory.
 
+Then, generate a `personal access token
+<https://help.github.com/articles/creating-a-personal-access-token-for-the-
+command-line/>`__, create `GITHUB_USERNAME` and `GITHUB_ACCESS_TOKEN` Heroku
+configuration variables with that value, and put::
+
+    GITHUB_USERNAME=<your github username>
+    GITHUB_ACCESS_TOKEN=<your token here>
+
+in the .env file in the project home directory.
+
 Sendgrid
 ~~~~~~~~
 

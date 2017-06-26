@@ -39,7 +39,7 @@ class CommitAdmin(admin.ModelAdmin):
 class PullRequestAdmin(admin.ModelAdmin):
     list_display = ['number', 'repository', 'user', 'avatar', 'state']
     list_filter = ['state']
-    raw_id_fields = ['repository', 'user', 'merge_commit']
+    raw_id_fields = ['repository', 'user', 'commit']
 
     def avatar(self, pr):
         return mark_safe('<img src="%s" style="width: 32px" alt="Github avatar">' % pr.user.avatar_url)
