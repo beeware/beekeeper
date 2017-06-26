@@ -66,8 +66,7 @@ def push_handler(payload):
     commit.url = commit_data['url']
     commit.save()
 
-    if not commit.pull_requests.exists():
-        new_build.send(sender=Commit, instance=commit)
+    new_build.send(sender=Commit, instance=commit)
 
     return 'OK'
 
@@ -83,13 +82,8 @@ def pull_request_handler(payload):
     # Make sure we have a record for the repository
     repo = get_or_create_repository(payload['repository'])
 
-    # If this is a merge commit, make sure we have a record for
-    # the commit.
-    if payload['pull_request']['merge_commit_sha']:
-        commit_sha = payload['pull_request']['merge_commit_sha']
-    else:
-        commit_sha = payload['pull_request']['head']['sha']
-
+    # Make sure we have a record of the head commit
+    commit_sha = payload['pull_request']['head']['sha']
     try:
         commit = Commit.objects.get(sha=commit_sha)
     except Commit.DoesNotExist:

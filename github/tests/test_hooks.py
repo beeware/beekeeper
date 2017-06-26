@@ -18,7 +18,7 @@ class PullRequestHookTests(TestCase):
         self.assertEqual(GithubUser.objects.count(), 2 + extra_users)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
-        self.assertEqual(Commit.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 1)
 
         # Check some properties of the created objects.
         submitter = GithubUser.objects.get(login='freakboy3742')
@@ -159,6 +159,12 @@ class PullRequestHookTests(TestCase):
             user_type=GithubUser.USER_TYPE_USER,
         )
 
+        commit = Commit.objects.create(
+            repository=repo,
+            user=owner,
+            sha='936ce824549a2a794df739c1ffab91f5644d812b'
+        )
+
         PullRequest.objects.create(
             github_id=127348414,
             user=submitter,
@@ -168,12 +174,13 @@ class PullRequestHookTests(TestCase):
             html_url='http://example.com/pr/42',
             diff_url='http://example.com/pr/42.diff',
             patch_url='http://example.com/pr/42.patch',
+            commit=commit,
             state=PullRequest.STATE_OPEN,
         )
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
-        self.assertEqual(Commit.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 1)
 
         pull_request_handler(self.payload)
 
@@ -216,6 +223,12 @@ class PullHookTests(TestCase):
 
         push_handler(self.pull_payload)
 
+        # An extra commit is created.
+        self.assertEqual(GithubUser.objects.count(), 2)
+        self.assertEqual(Repository.objects.count(), 1)
+        self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(Commit.objects.count(), 2)
+
         self.assert_postconditions()
 
     def test_merge_commit_before_pr(self):
@@ -229,11 +242,11 @@ class PullHookTests(TestCase):
 
         pull_request_handler(self.pull_request_payload)
 
-        # No extra commit is created.
+        # An extra commit is created.
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
-        self.assertEqual(Commit.objects.count(), 1)
+        self.assertEqual(Commit.objects.count(), 2)
 
         self.assert_postconditions()
 

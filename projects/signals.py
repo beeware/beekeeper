@@ -29,11 +29,19 @@ def new_build(sender, instance=None, *args, **kwargs):
                 Build.objects.create(
                     project=project,
                     pull_request=instance,
+                    commit=instance.commit,
                 )
         else:
-            # If the project is active, create a new build.
+            # If the project is active, cancel all pending
+            # mainline builds.
             project = Project.objects.get(repository=instance.repository)
             if project.status == Project.STATUS_ACTIVE:
+                for build in Build.objects.filter(
+                            project=project,
+                            pull_request=None,
+                        ).pending():
+                    build.cancel()
+
                 Build.objects.create(
                     project=project,
                     commit=instance,
