@@ -124,7 +124,7 @@ class Change(models.Model):
         if self.pull_request:
             return self.pull_request.title
         else:
-            return self.push.commit.message
+            return self.push.commit.title
 
     @property
     def user(self):
