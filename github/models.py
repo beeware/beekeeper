@@ -22,6 +22,9 @@ class User(models.Model):
     html_url = models.URLField()
     user_type = models.IntegerField(choices=USER_TYPE_CHOICES, default=USER_TYPE_USER)
 
+    class Meta:
+        ordering = ('login',)
+
     def __str__(self):
         return "@%s" % self.login
 
@@ -39,9 +42,10 @@ class Repository(models.Model):
 
     class Meta:
         verbose_name_plural = 'repositories'
+        ordering = ('name',)
 
     def __str__(self):
-        return "Github repository %s" % self.full_name
+        return "github:%s" % self.full_name
 
     @property
     def full_name(self):
@@ -54,11 +58,13 @@ class Commit(models.Model):
     sha = models.CharField(max_length=40, db_index=True)
     user = models.ForeignKey(User, related_name='commits')
 
-    created = models.DateTimeField(default=timezone.now)
-    updated = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField()
 
     message = models.TextField()
     url = models.URLField()
+
+    class Meta:
+        ordering = ('created',)
 
     def __str__(self):
         return "Commit %s on %s" % (self.sha, self.repository)
@@ -98,16 +104,48 @@ class PullRequest(models.Model):
     number = models.IntegerField(db_index=True)
     github_id = models.IntegerField(db_index=True)
 
-    created = models.DateTimeField(default=timezone.now)
-    updated = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField()
+    updated = models.DateTimeField()
 
     user = models.ForeignKey(User, related_name='pull_requests')
     title = models.CharField(max_length=100)
     html_url = models.URLField()
     diff_url = models.URLField()
     patch_url = models.URLField()
-    commit = models.ForeignKey(Commit, related_name='pull_requests')
     state = models.IntegerField(choices=STATE_CHOICES, default=STATE_OPEN)
+
+    class Meta:
+        ordering = ('number',)
 
     def __str__(self):
         return "PR %s on %s" % (self.number, self.repository)
+
+
+class PullRequestUpdate(models.Model):
+    pull_request = models.ForeignKey(PullRequest, related_name='updates')
+    commit = models.ForeignKey(Commit, related_name='pull_request_updates')
+
+    created = models.DateTimeField()
+
+    class Meta:
+        ordering = ('created',)
+
+    def __str__(self):
+        return "Update %s to PR %s on %s" % (
+            self.commit.sha, self.pull_request.number, self.pull_request.repository
+        )
+
+
+class Push(models.Model):
+    commit = models.ForeignKey(Commit, related_name='pushes')
+
+    created = models.DateTimeField()
+
+    class Meta:
+        verbose_name_plural = 'pushes'
+        ordering = ('created',)
+
+    def __str__(self):
+        return "Push %s to branch %s on %s" % (
+            self.commit.sha, self.commit.branch, self.commit.repository
+        )

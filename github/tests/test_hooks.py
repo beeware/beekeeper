@@ -1,24 +1,34 @@
+from datetime import datetime
 import json
 import os
 
-from django.test import TestCase
+import pytz
 
-from ..models import User as GithubUser, Repository, PullRequest, Commit
+from django.test import TestCase
+from django.utils import timezone
+
+from ..models import User as GithubUser, Repository, Commit, PullRequest, PullRequestUpdate, Push
 
 from ..hooks import pull_request_handler, push_handler
 
 
+UTC = pytz.timezone('UTC')
+
+
 class PullRequestHookTests(TestCase):
     def setUp(self):
-        with open(os.path.join(os.path.dirname(__file__), 'pr_1.json')) as pr_file:
+        self.maxDiff = None
+        self.now = timezone.now()
+        with open(os.path.join(os.path.dirname(__file__), 'replay', '0001_open_pr_1.json')) as pr_file:
             self.payload = json.load(pr_file)
 
-    def assert_postconditions(self, extra_users=0):
+    def assert_postconditions(self, extra_users=0, extra_commits=0, extra_pull_request_updates=0):
         # Postcondition - 2 users, 1 repo, 1 PR.
         self.assertEqual(GithubUser.objects.count(), 2 + extra_users)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
-        self.assertEqual(Commit.objects.count(), 1)
+        self.assertEqual(PullRequestUpdate.objects.count(), 1 + extra_pull_request_updates)
+        self.assertEqual(Commit.objects.count(), 1 + extra_commits)
 
         # Check some properties of the created objects.
         submitter = GithubUser.objects.get(login='freakboy3742')
@@ -43,17 +53,23 @@ class PullRequestHookTests(TestCase):
         self.assertEqual(commit.user.login, 'freakboy3742')
         self.assertEqual(commit.branch, 'prtest')
         self.assertEqual(commit.url, 'https://github.com/pybee/webhook-trigger/commit/936ce824549a2a794df739c1ffab91f5644d812b')
+        self.assertEqual(commit.created, datetime(2017, 6, 25, 0, 45, 7, tzinfo=UTC))
 
         pr = PullRequest.objects.get(github_id=127348414)
         self.assertEqual(pr.user, submitter)
         self.assertEqual(pr.repository, repo)
         self.assertEqual(pr.number, 1)
         self.assertEqual(pr.title, 'Test of a pull request from a fork.')
+        self.assertEqual(pr.created, datetime(2017, 6, 25, 0, 45, 7, tzinfo=UTC))
+        self.assertEqual(pr.updated, datetime(2017, 6, 25, 0, 45, 7, tzinfo=UTC))
         self.assertEqual(pr.html_url, 'https://github.com/pybee/webhook-trigger/pull/1')
         self.assertEqual(pr.diff_url, 'https://github.com/pybee/webhook-trigger/pull/1.diff')
         self.assertEqual(pr.patch_url, 'https://github.com/pybee/webhook-trigger/pull/1.patch')
         self.assertEqual(pr.state, PullRequest.STATE_OPEN)
 
+        update = PullRequestUpdate.objects.get(commit=commit)
+        self.assertEqual(update.pull_request, pr)
+        self.assertEqual(update.created, datetime(2017, 6, 25, 0, 45, 7, tzinfo=UTC))
 
     def test_clean_db(self):
         # Preconditions - a clean database
@@ -169,39 +185,49 @@ class PullRequestHookTests(TestCase):
             repository=repo,
             user=owner,
             branch='prtest',
-            sha='936ce824549a2a794df739c1ffab91f5644d812b',
-            url='https://github.com/pybee/webhook-trigger/commit/936ce824549a2a794df739c1ffab91f5644d812b'
+            sha='739c1ffab91f5644d81936ce824549a2a794df2b',
+            created=self.now,
+            url='https://github.com/pybee/webhook-trigger/commit/9c1ffab91f5644d812b936ce824549a2a794df73'
         )
 
-        PullRequest.objects.create(
+        pull_request = PullRequest.objects.create(
             github_id=127348414,
             user=submitter,
             repository=repo,
             number=42,
             title="pr title",
+            created=self.now,
+            updated=self.now,
             html_url='http://example.com/pr/42',
             diff_url='http://example.com/pr/42.diff',
             patch_url='http://example.com/pr/42.patch',
-            commit=commit,
             state=PullRequest.STATE_OPEN,
         )
+
+        PullRequestUpdate.objects.create(
+            pull_request=pull_request,
+            commit=commit,
+            created=self.now,
+        )
+
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(Commit.objects.count(), 1)
+        self.assertEqual(PullRequestUpdate.objects.count(), 1)
 
         pull_request_handler(self.payload)
 
-        self.assert_postconditions()
+        self.assert_postconditions(extra_commits=1, extra_pull_request_updates=1)
 
 
-class PullHookTests(TestCase):
+class PushHookTests(TestCase):
     def setUp(self):
-        with open(os.path.join(os.path.dirname(__file__), 'pr_2.json')) as pr_file:
+        with open(os.path.join(os.path.dirname(__file__), 'replay', '0004_close_pr_2.json')) as pr_file:
             self.pull_request_payload = json.load(pr_file)
 
-        with open(os.path.join(os.path.dirname(__file__), 'pull_1.json')) as pull_file:
-            self.pull_payload = json.load(pull_file)
+        with open(os.path.join(os.path.dirname(__file__), 'replay', '0005_merge_pr_2.json')) as push_file:
+            self.push_payload = json.load(push_file)
 
     def assert_postconditions(self):
         commit = Commit.objects.get(sha='02bc552855735a0a4f74bfe2d8d2011bc003460c')
@@ -209,10 +235,14 @@ class PullHookTests(TestCase):
         self.assertEqual(commit.branch, 'master')
         self.assertEqual(commit.message, 'Merge pull request #2 from freakboy3742/closed_pr\n\nAdded content that can be merged.')
         self.assertEqual(commit.url, 'https://github.com/pybee/webhook-trigger/commit/02bc552855735a0a4f74bfe2d8d2011bc003460c')
+        self.assertEqual(commit.created, datetime(2017, 6, 25, 8, 21, 28, tzinfo=UTC))
+
+        push = Push.objects.get(commit=commit)
+        self.assertEqual(push.created, datetime(2017, 6, 25, 8, 21, 28, tzinfo=UTC))
 
     def test_standalone_commit(self):
         # Handle the pull request
-        push_handler(self.pull_payload)
+        push_handler(self.push_payload)
 
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
@@ -230,7 +260,7 @@ class PullHookTests(TestCase):
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(Commit.objects.count(), 1)
 
-        push_handler(self.pull_payload)
+        push_handler(self.push_payload)
 
         # An extra commit is created.
         self.assertEqual(GithubUser.objects.count(), 2)
@@ -242,7 +272,7 @@ class PullHookTests(TestCase):
 
     def test_merge_commit_before_pr(self):
         # Handle the pull request
-        push_handler(self.pull_payload)
+        push_handler(self.push_payload)
 
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)

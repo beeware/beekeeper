@@ -5,20 +5,20 @@
         <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
         <li class="breadcrumb-item"><a href="{{ project.get_absolute_url }}"><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar"> {{ project.repository.name }}</a></li>
     </ol>
-    <h1><img src="{{ pull_request.user.avatar_url }}" alt="Github avatar for {{ pull_request.user }}" class="avatar">PR #{{ pull_request.number }} - {{ pull_request.title }}<a href="{{ pull_request.html_url }}"><i class="fa fa-github exit" aria-hidden="true"></i></a></h1>
+    <h1><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.title }} - {{ change.description }}<a href="{{ change.html_url }}"><i class="fa fa-github exit" aria-hidden="true"></i></a></h1>
 
     <table class="table">
         <thead>
             <tr>
-                <th>Build #</th>
+                <th>Build</th>
                 <th>Result</th>
                 <th>Status</th>
             </tr>
         </thead>
         <tbody>
-    {% for build in pull_request.builds.all %}
+    {% for build in change.builds.all %}
             <tr scope="row">
-                <td><a href="{{ build.get_absolute_url }}">Build #{{ build.pk }}</a></td>
+                <td><a href="{{ build.get_absolute_url }}">{{ build.display_pk }}</a></td>
                 <td>{{ build.get_result_display }}</td>
                 <td>{{ build.get_status_display }}</td>
             </tr>

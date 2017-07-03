@@ -7,7 +7,7 @@
         <thead>
             <tr>
                 <th>Project</th>
-                <th># Open pull requests</th>
+                <th># Open changes</th>
                 <th># Pending builds</th>
                 <th></th>
             </tr>
@@ -16,7 +16,7 @@
     {% for project in projects %}
             <tr scope="row">
                 <td><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar"><a href="{{ project.get_absolute_url }}">{{ project.repository.full_name }}</a></td>
-                <td>{{ project.repository.pull_requests.open.count }}</td>
+                <td>{{ project.changes.active.count }}</td>
                 <td>{{ project.builds.pending.count }}</td>
                 <td><a href="{{ project.repository.html_url }}"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></td>
             </tr>

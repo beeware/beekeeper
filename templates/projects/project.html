@@ -15,18 +15,11 @@
             </tr>
         </thead>
         <tbody>
-    {% for build in project.current_commit.builds.all %}
+    {% for change in project.changes.active %}
         <tr scope="row">
-            <td><a href="{{ build.get_absolute_url }}">{{ build.commit.display_sha }}</a></td>
-            <td><img src="{{ build.commit.user.avatar_url }}" alt="Github avatar for {{ build.commit.user }}" class="avatar">{{ build.commit.user }}</td>
-            <td>{{ build.commit.title }}</td>
-        </tr>
-    {% endfor %}
-    {% for pr in project.repository.pull_requests.open %}
-        <tr scope="row">
-            <td><a href="{% url 'projects:pull_request' owner=pr.repository.owner.login repo_name=pr.repository.name pr=pr.number %}">PR #{{ pr.number }}</a></td>
-            <td><img src="{{ pr.user.avatar_url }}" alt="Github avatar for {{ pr.user }}" class="avatar">{{ pr.user }}</td>
-            <td>{{ pr.title }}</td>
+            <td><a href="{{ change.get_absolute_url }}">{{ change.title }}</a></td>
+            <td><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.user }}</td>
+            <td>{{ change.description }}</td>
         </tr>
     {% endfor %}
         </tbody>

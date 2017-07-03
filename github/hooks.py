@@ -1,3 +1,5 @@
+from dateutil import parser as datetime_parser
+
 
 def ping_handler(payload):
     "A handler for the Github Ping message"
@@ -44,7 +46,7 @@ def get_or_create_repository(repo_data):
 
 def push_handler(payload):
     "A handler for Github push messages"
-    from .models import Commit
+    from .models import Commit, Push
     from .signals import new_build
 
     # Make sure we have a record for the submitter of the pull
@@ -65,16 +67,25 @@ def push_handler(payload):
     commit.branch = payload['ref'].rsplit('/', 1)[1]
     commit.message = commit_data['message']
     commit.url = commit_data['url']
+    commit.created = datetime_parser.parse(commit_data['timestamp'])
     commit.save()
 
-    new_build.send(sender=Commit, instance=commit)
+    # And create a push record.
+    try:
+        push = Push.objects.get(commit=commit)
+    except Push.DoesNotExist:
+        push = Push(commit=commit)
+    push.created = datetime_parser.parse(commit_data['timestamp'])
+    push.save()
+
+    new_build.send(sender=Push, push=push)
 
     return 'OK'
 
 
 def pull_request_handler(payload):
     "A handler for pull request messages"
-    from .models import PullRequest, Commit
+    from .models import Commit, PullRequest, PullRequestUpdate
     from .signals import new_build
 
     # Make sure we have a record for the submitter of the PR
@@ -93,6 +104,7 @@ def pull_request_handler(payload):
             sha=commit_sha,
             user=submitter,
             branch=payload['pull_request']['head']['ref'],
+            created=datetime_parser.parse(payload['pull_request']['updated_at']),
             url='https://github.com/%s/%s/commit/%s' % (
                 repo.owner.login,
                 repo.name,
@@ -113,14 +125,27 @@ def pull_request_handler(payload):
     pr.html_url = pr_data['html_url']
     pr.diff_url = pr_data['diff_url']
     pr.patch_url = pr_data['patch_url']
-    pr.commit = commit
     pr.state = PullRequest.STATE_VALUES[pr_data['state']]
     pr.title = pr_data['title']
+    pr.created = datetime_parser.parse(pr_data['created_at'])
+    pr.updated = datetime_parser.parse(pr_data['updated_at'])
     pr.save()
 
+    # And create a pull request update for this PR.
+    try:
+        update = PullRequestUpdate.objects.get(pull_request=pr, commit=commit)
+    except PullRequestUpdate.DoesNotExist:
+        update = PullRequestUpdate(
+            pull_request=pr,
+            commit=commit,
+        )
+    update.created = datetime_parser.parse(pr_data['created_at'])
+    update.save()
+
     if payload['action'] in ['opened', 'synchronize']:
-        new_build.send(sender=PullRequest, instance=pr)
-    # elif payload['action'] == 'closed'
-    #     ...
+        new_build.send(sender=PullRequestUpdate, update=update)
+    elif payload['action'] == 'closed':
+        for change in pr.changes.active():
+            change.complete()
 
     return 'OK'
