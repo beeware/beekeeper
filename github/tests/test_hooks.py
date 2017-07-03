@@ -19,7 +19,7 @@ class PullRequestHookTests(TestCase):
     def setUp(self):
         self.maxDiff = None
         self.now = timezone.now()
-        with open(os.path.join(os.path.dirname(__file__), 'replay', '0001_open_pr_1.json')) as pr_file:
+        with open(os.path.join(os.path.dirname(__file__), 'replay', '0001.pull_request.Open PR 1.json')) as pr_file:
             self.payload = json.load(pr_file)
 
     def assert_postconditions(self, extra_users=0, extra_commits=0, extra_pull_request_updates=0):
@@ -223,10 +223,10 @@ class PullRequestHookTests(TestCase):
 
 class PushHookTests(TestCase):
     def setUp(self):
-        with open(os.path.join(os.path.dirname(__file__), 'replay', '0004_close_pr_2.json')) as pr_file:
+        with open(os.path.join(os.path.dirname(__file__), 'replay', '0004.pull_request.Close PR 2.json')) as pr_file:
             self.pull_request_payload = json.load(pr_file)
 
-        with open(os.path.join(os.path.dirname(__file__), 'replay', '0005_merge_pr_2.json')) as push_file:
+        with open(os.path.join(os.path.dirname(__file__), 'replay', '0005.push.Merge PR 2.json')) as push_file:
             self.push_payload = json.load(push_file)
 
     def assert_postconditions(self):
