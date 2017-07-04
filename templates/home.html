@@ -14,13 +14,41 @@
         </thead>
         <tbody>
     {% for project in projects %}
-            <tr scope="row">
+            <tr>
                 <td><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar"><a href="{{ project.get_absolute_url }}">{{ project.repository.full_name }}</a></td>
                 <td>{{ project.changes.active.count }}</td>
                 <td>{{ project.builds.pending.count }}</td>
-                <td><a href="{{ project.repository.html_url }}"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></td>
+                <td class="minimal"><a href="{{ project.repository.html_url }}"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></td>
             </tr>
     {% endfor %}
         </tbody>
-  </table>
+    </table>
+
+{% if user.is_superuser and new_projects %}
+    <form method="POST">{% csrf_token %}
+    <h2>Repositories awaiting approval</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Project</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+    {% for project in new_projects %}
+            <tr>
+                <td class="minimal"><input type="checkbox" name="projects" value="{{ project.id }}"></td>
+                <td><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar"><a href="{{ project.get_absolute_url }}">{{ project.repository.full_name }}</a></td>
+                <td class="minimal"><a href="{{ project.repository.html_url }}"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></td>
+            </tr>
+    {% endfor %}
+        </tbody>
+    </table>
+    <div>
+        <input type="submit" class="btn btn-success float-right control" value="Approve" name="approve">
+        <input type="submit" class="btn btn-warning float-right control" value="Ignore" name="ignore">
+    </div>
+    </form>
+{% endif %}
 {% endblock %}

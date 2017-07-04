@@ -6,7 +6,7 @@ from .models import Project, Change, Build
 
 def approve(modeladmin, request, queryset):
     for obj in queryset:
-        obj.status = obj.STATUS_ACTIVE
+        obj.status = obj.approve()
         obj.save()
         messages.info(request, 'Approving %s for build' % obj)
 approve.short_description = "Approve for build"
@@ -14,7 +14,7 @@ approve.short_description = "Approve for build"
 
 def attic(modeladmin, request, queryset):
     for obj in queryset:
-        obj.status = obj.STATUS_ATTIC
+        obj.status = obj.complete()
         obj.save()
         messages.info(request, 'Moving %s to the attic' % obj)
 attic.short_description = "Move to attic"
@@ -22,7 +22,7 @@ attic.short_description = "Move to attic"
 
 def ignore(modeladmin, request, queryset):
     for obj in queryset:
-        obj.status = obj.STATUS_IGNORE
+        obj.status = obj.ignore()
         obj.save()
         messages.info(request, 'Ignoring %s' % obj)
 ignore.short_description = "Ignore"

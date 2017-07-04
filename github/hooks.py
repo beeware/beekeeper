@@ -1,11 +1,6 @@
 from dateutil import parser as datetime_parser
 
 
-def ping_handler(payload):
-    "A handler for the Github Ping message"
-    return 'OK'
-
-
 def get_or_create_user(user_data):
     "Extract and update a user from payload data"
     from .models import User as GithubUser
@@ -42,6 +37,15 @@ def get_or_create_repository(repo_data):
     repo.save()
 
     return repo
+
+
+def ping_handler(payload):
+    "A handler for the Github Ping message"
+
+    # Make sure we have a record for the repository
+    repo = get_or_create_repository(payload['repository'])
+
+    return 'OK'
 
 
 def push_handler(payload):

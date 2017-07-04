@@ -7,6 +7,7 @@ from django.utils import timezone
 from github import models as github
 
 
+
 class StatusQuerySet(models.QuerySet):
     def pending_approval(self):
         return self.filter(status=Project.STATUS_NEW)
@@ -64,6 +65,18 @@ class Project(models.Model):
     @property
     def builds(self):
         return Build.objects.filter(change__project=self)
+
+    def approve(self):
+        self.status = Project.STATUS_ACTIVE
+        self.save()
+
+    def complete(self):
+        self.status = Project.STATUS_ATTIC
+        self.save()
+
+    def ignore(self):
+        self.status = Project.STATUS_IGNORED
+        self.save()
 
 
 class Change(models.Model):
@@ -133,6 +146,10 @@ class Change(models.Model):
         else:
             return self.push.commit.user
 
+    def approve(self):
+        self.status = Project.STATUS_ACTIVE
+        self.save()
+
     def complete(self):
         self.status = Change.STATUS_ATTIC
         self.completed = timezone.now()
@@ -141,12 +158,19 @@ class Change(models.Model):
         for build in self.builds.pending():
             build.cancel()
 
+    def ignore(self):
+        self.status = Project.STATUS_IGNORED
+        self.save()
+
 
 class BuildQuerySet(models.QuerySet):
     def pending(self):
         return self.filter(status__in=(
                     Build.STATUS_CREATED, Build.STATUS_RUNNING)
                 )
+
+    def running(self):
+        return self.filter(status=Build.STATUS_RUNNING)
 
 
 class Build(models.Model):
@@ -186,6 +210,9 @@ class Build(models.Model):
 
     class Meta:
         ordering = ('-created',)
+
+    def __str__(self):
+        return self.display_pk
 
     def get_absolute_url(self):
         return reverse('projects:build', kwargs={
