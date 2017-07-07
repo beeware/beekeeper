@@ -87,17 +87,12 @@ class Change(models.Model):
         (CHANGE_TYPE_PUSH, 'Push'),
     ]
 
-    STATUS_NEW = 10
-    STATUS_ACTIVE = 100
-    STATUS_ATTIC = 1000
-    STATUS_IGNORED = 9999
+    STATUS_NEW = Project.STATUS_NEW
+    STATUS_ACTIVE = Project.STATUS_ACTIVE
+    STATUS_ATTIC = Project.STATUS_ATTIC
+    STATUS_IGNORED = Project.STATUS_IGNORED
 
-    STATUS_CHOICES = [
-        (STATUS_NEW, 'New'),
-        (STATUS_ACTIVE, 'Active'),
-        (STATUS_ATTIC, 'Attic'),
-        (STATUS_IGNORED, 'Ignored'),
-    ]
+    STATUS_CHOICES = Project.STATUS_CHOICES
 
     objects = StatusQuerySet.as_manager()
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -113,13 +108,20 @@ class Change(models.Model):
     completed = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ('project__repository__name', '-created')
+        ordering = ('project__repository__name', '-updated')
 
     def __str__(self):
         return self.title
 
     def get_absolute_url(self):
         return reverse('projects:change', kwargs={
+                    'owner': self.project.repository.owner.login,
+                    'repo_name': self.project.repository.name,
+                    'change_pk': str(self.pk),
+                })
+
+    def get_status_url(self):
+        return reverse('projects:change-status', kwargs={
                     'owner': self.project.repository.owner.login,
                     'repo_name': self.project.repository.name,
                     'change_pk': str(self.pk),
@@ -146,8 +148,12 @@ class Change(models.Model):
         else:
             return self.push.commit.user
 
+    @property
+    def is_complete(self):
+        return self.status in (Change.STATUS_ATTIC, Change.STATUS_IGNORED)
+
     def approve(self):
-        self.status = Project.STATUS_ACTIVE
+        self.status = Change.STATUS_ACTIVE
         self.save()
 
     def complete(self):
@@ -156,34 +162,44 @@ class Change(models.Model):
         self.save()
 
         for build in self.builds.pending():
-            build.cancel()
+            build.stop()
 
     def ignore(self):
-        self.status = Project.STATUS_IGNORED
+        self.status = Change.STATUS_IGNORED
         self.save()
 
 
 class BuildQuerySet(models.QuerySet):
     def pending(self):
         return self.filter(status__in=(
-                    Build.STATUS_CREATED, Build.STATUS_RUNNING)
+                    Build.STATUS_CREATED,
+                    Build.STATUS_RUNNING)
                 )
 
     def running(self):
         return self.filter(status=Build.STATUS_RUNNING)
 
+    def done(self):
+        return self.filter(status=Build.STATUS_DONE)
+
 
 class Build(models.Model):
     STATUS_CREATED = 10
+    STATUS_PENDING = 19
     STATUS_RUNNING = 20
     STATUS_DONE = 100
-    STATUS_CANCELLED = 9999
+    STATUS_ERROR = 200
+    STATUS_STOPPING = 9998
+    STATUS_STOPPED = 9999
 
     STATUS_CHOICES = [
         (STATUS_CREATED, 'Created'),
+        # No PENDING state for builds.
         (STATUS_RUNNING, 'Running'),
         (STATUS_DONE, 'Done'),
-        (STATUS_CANCELLED, 'Cancelled'),
+        (STATUS_ERROR, 'Error'),
+        (STATUS_STOPPING, 'Stopping'),
+        (STATUS_STOPPED, 'Stopped'),
     ]
 
     RESULT_PENDING = 0
@@ -209,13 +225,26 @@ class Build(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ('-created',)
+        ordering = ('-updated',)
 
     def __str__(self):
         return self.display_pk
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Bump the updated timestamp on the change
+        self.change.save()
+
     def get_absolute_url(self):
         return reverse('projects:build', kwargs={
+                    'owner': self.change.project.repository.owner.login,
+                    'repo_name': self.change.project.repository.name,
+                    'change_pk': str(self.change.pk),
+                    'build_pk': str(self.pk)
+                })
+
+    def get_status_url(self):
+        return reverse('projects:build-status', kwargs={
                     'owner': self.change.project.repository.owner.login,
                     'repo_name': self.change.project.repository.name,
                     'change_pk': str(self.change.pk),
@@ -226,9 +255,159 @@ class Build(models.Model):
     def display_pk(self):
         return self.id.hex[:8]
 
-    def cancel(self):
-        if self.status == Build.STATUS_RUNNING:
-            print("kill build...")
+    @property
+    def is_finished(self):
+        return self.status in (
+            Build.STATUS_DONE,
+            Build.STATUS_ERROR,
+            Build.STATUS_STOPPED
+        )
 
-        self.status = Build.STATUS_CANCELLED
+    def start(self):
+        from .tasks import check_build
+        check_build.delay(str(self.pk))
+
+    def stop(self):
+        # Mark the build as stopping. This will be picked up on
+        # the next iteration of the build check, terminating any
+        # tasks that are underway.
+        assert self.status == Build.STATUS_RUNNING
+        self.status = Build.STATUS_STOPPING
+        self.save()
+
+
+
+class TaskQuerySet(models.QuerySet):
+    def started(self):
+        return self.filter(status__in=(
+                    Task.STATUS_PENDING,
+                    Task.STATUS_RUNNING,
+                ))
+
+    def not_finished(self):
+        return self.filter(status__in=(
+                    Task.STATUS_CREATED,
+                    Task.STATUS_PENDING,
+                    Task.STATUS_RUNNING,
+                    Task.STATUS_STOPPING,
+                ))
+
+    def running(self):
+        return self.filter(status=Task.STATUS_RUNNING)
+
+    def stopping(self):
+        return self.filter(status=Task.STATUS_STOPPING)
+
+    def finished(self):
+        return self.filter(status__in=[
+                                Task.STATUS_DONE,
+                                Task.STATUS_ERROR,
+                                Task.STATUS_STOPPED,
+                            ])
+
+    def done(self):
+        return self.filter(status=Task.STATUS_DONE)
+
+    def error(self):
+        return self.filter(status=Task.STATUS_ERROR)
+
+
+class Task(models.Model):
+    STATUS_CREATED = Build.STATUS_CREATED
+    STATUS_PENDING = Build.STATUS_PENDING
+    STATUS_RUNNING = Build.STATUS_RUNNING
+    STATUS_DONE = Build.STATUS_DONE
+    STATUS_ERROR = Build.STATUS_ERROR
+    STATUS_STOPPING = Build.STATUS_STOPPING
+    STATUS_STOPPED = Build.STATUS_STOPPED
+
+    STATUS_CHOICES = [
+        (STATUS_CREATED, 'Created'),
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_RUNNING, 'Running'),
+        (STATUS_DONE, 'Done'),
+        (STATUS_ERROR, 'Error'),
+        (STATUS_STOPPING, 'Stopping'),
+        (STATUS_STOPPED, 'Stopped'),
+    ]
+    objects = TaskQuerySet.as_manager()
+
+    build = models.ForeignKey(Build, related_name='tasks')
+    status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_CREATED)
+    result = models.IntegerField(choices=Build.RESULT_CHOICES, default=Build.RESULT_PENDING)
+
+    name = models.CharField(max_length=100, db_index=True)
+    slug = models.CharField(max_length=100, db_index=True)
+
+    phase = models.IntegerField()
+    started = models.DateTimeField(null=True, blank=True)
+    updated = models.DateTimeField(auto_now=True)
+    completed = models.DateTimeField(null=True, blank=True)
+
+    descriptor = models.CharField(max_length=100)
+    arn = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        ordering = ('phase', 'name',)
+        unique_together = [('build', 'slug')]
+
+    def get_absolute_url(self):
+        return reverse('projects:task', kwargs={
+                    'owner': self.build.change.project.repository.owner.login,
+                    'repo_name': self.build.change.project.repository.name,
+                    'change_pk': str(self.build.change.pk),
+                    'build_pk': str(self.build.pk),
+                    'task_slug': self.slug
+                })
+
+    def get_status_url(self):
+        return reverse('projects:task-status', kwargs={
+                    'owner': self.build.change.project.repository.owner.login,
+                    'repo_name': self.build.change.project.repository.name,
+                    'change_pk': str(self.build.change.pk),
+                    'build_pk': str(self.build.pk),
+                    'task_slug': self.slug
+                })
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def has_started(self):
+        return self.status in [
+            Task.STATUS_RUNNING,
+            Task.STATUS_DONE,
+            Task.STATUS_ERROR,
+        ]
+
+    @property
+    def is_finished(self):
+        return self.status in (
+            Build.STATUS_DONE,
+            Build.STATUS_ERROR,
+            Build.STATUS_STOPPED
+        )
+
+    @property
+    def log_stream_name(self):
+        return '%s/%s/%s' % (
+            self.descriptor, self.descriptor, self.arn.rsplit('/', 1)[1]
+        )
+
+    def start(self, ecs_client):
+        response = ecs_client.run_task(
+            cluster=settings.AWS_ECS_CLUSTER_NAME,
+            taskDefinition=self.descriptor,
+        )
+        self.arn = response['tasks'][0]['taskArn']
+        self.status = Task.STATUS_PENDING
+        self.started = timezone.now()
+        self.save()
+
+    def stop(self, ecs_client):
+        response = ecs_client.stop_task(
+            cluster=settings.AWS_ECS_CLUSTER_NAME,
+            task=self.arn
+        )
+        self.status = Task.STATUS_STOPPING
         self.save()

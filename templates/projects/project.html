@@ -6,8 +6,8 @@
     </ol>
     <h1><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.name }} <a href="{{ project.repository.html_url }}"><i class="fa fa-github exit" aria-hidden="true"></i></a></h1>
 
-    <table class="table">
-        <thead>
+    <table class="table table-hover">
+        <thead class="thead-default">
             <tr>
                 <th>#</th>
                 <th>Author</th>
@@ -17,7 +17,7 @@
         <tbody>
     {% for change in project.changes.active %}
         <tr scope="row">
-            <td><a href="{{ change.get_absolute_url }}">{{ change.title }}</a></td>
+            <td class="minimal"><a href="{{ change.get_absolute_url }}">{{ change.title }}</a></td>
             <td><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.user }}</td>
             <td>{{ change.description }}</td>
         </tr>

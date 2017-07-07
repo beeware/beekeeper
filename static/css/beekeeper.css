@@ -110,3 +110,42 @@ div.container {
 .control {
   margin-left: 1em;
 }
+
+/**************************************
+ * Logs
+ **************************************/
+
+.log pre {
+  background-color: black;
+  color: lightgray;
+  padding: 1em;
+}
+
+.hidden {
+  display: none;
+}
+
+/**************************************
+ * Build status
+ **************************************/
+
+.error, .fail {
+  color: #d9534f;
+}
+
+.qualified-pass, .warning {
+  color: #f0ad4e;
+}
+
+.success, .pass {
+  color: #5cb85c;
+}
+
+.info, .pending {
+  color: #2aabd2;
+}
+
+th.result, td.result {
+  width: 1em;
+  text-align: center;
+}

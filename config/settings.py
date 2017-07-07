@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'storages',
-    'django_rq',
     'rhouser',
 
     'github',
@@ -159,27 +158,32 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+######################################################################
 # Set up the Redis Queue for workers.
-RQ_QUEUES = {
-    'default': {
-        'URL': os.getenv('REDIS_URL', 'redis://localhost:6379/0'),
-        'DEFAULT_TIMEOUT': 500,
-    },
-}
+######################################################################
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
-RQ_SHOW_ADMIN_LINK = True
-
+######################################################################
 # Media file storage
+######################################################################
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-AWS_STORAGE_BUCKET_NAME = 'network-opportunity-maps'
+AWS_STORAGE_BUCKET_NAME = 'beekeeper'
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 
+AWS_ECS_REGION_NAME = os.environ.get('AWS_ECS_REGION_NAME')
+AWS_ECS_CLUSTER_NAME = os.environ.get('AWS_ECS_CLUSTER_NAME')
+
+######################################################################
 # Sendgrid
+######################################################################
 EMAIL_BACKEND = "sgbackend.SendGridBackend"
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 
+######################################################################
 # Github
+######################################################################
 GITHUB_WEBHOOK_KEY = os.environ.get('GITHUB_WEBHOOK_KEY')
 GITHUB_USERNAME = os.environ.get('GITHUB_USERNAME')
 GITHUB_ACCESS_TOKEN = os.environ.get('GITHUB_ACCESS_TOKEN')

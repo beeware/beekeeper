@@ -18,7 +18,7 @@ def new_push_build(sender, push=None, *args, **kwargs):
         project = Project.objects.get(repository=push.commit.repository)
         if project.status == Project.STATUS_ACTIVE:
 
-            # Cancel all push builds on this project
+            # Stop all push builds on this project
             for change in project.changes.filter(
                                 change_type=Change.CHANGE_TYPE_PUSH
                             ).active():
@@ -41,7 +41,8 @@ def new_push_build(sender, push=None, *args, **kwargs):
                     )
 
             # Create a new build.
-            Build.objects.create(change=change, commit=push.commit)
+            build = Build.objects.create(change=change, commit=push.commit)
+            build.start()
 
     except Project.DoesNotExist:
         pass
@@ -68,12 +69,13 @@ def new_pull_request_build(sender, update=None, *args, **kwargs):
                         push=None,
                     )
 
-            # Cancel all pending builds on this change.
+            # Stop all pending builds on this change.
             for build in change.builds.pending():
-                build.cancel()
+                build.stop()
 
             # Create a new build.
-            Build.objects.create(change=change, commit=update.commit)
+            build = Build.objects.create(change=change, commit=update.commit)
+            build.start()
 
     except Project.DoesNotExist:
         pass

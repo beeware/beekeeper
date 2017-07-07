@@ -82,3 +82,26 @@ and secret access key. Create the `AWS_ACCESS_KEY_ID` and
     AWS_SECRET_ACCESS_KEY=<your secret key here>
 
 In the .env file in the project home directory.
+
+Go to the ECS panel and create a EC2 cluster in an AWS region of your choice.
+Create the `AWS_ECS_REGION_NAME` and `AWS_ECS_CLUSTER_NAME` Heroku
+configuration variables, and put::
+
+    AWS_ECS_REGION_NAME=<your region ID (e.g., us-west-2) here>
+    AWS_ECS_CLUSTER_NAME=<your cluster name here>
+
+In the .env file in the project home directory.
+
+
+Docker
+~~~~~~
+
+
+pip install awscli
+aws configure
+aws ecr get-login --no-include-email --region us-west-2
+    (run the resutl of this command)
+
+
+
+

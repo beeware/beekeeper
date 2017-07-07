@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
 from django.utils.safestring import mark_safe
 
-from .models import Project, Change, Build
+from .models import Project, Change, Build, Task
 
 
 def approve(modeladmin, request, queryset):
@@ -56,11 +56,18 @@ class ChangeAdmin(admin.ModelAdmin):
     title.short_description = 'Title'
 
 
+class TaskInline(admin.TabularInline):
+    model = Task
+    list_display = ['slug', 'name', 'phase', 'image', 'status', 'result']
+    extra = 0
+
+
 @admin.register(Build)
 class BuildAdmin(admin.ModelAdmin):
     list_display = ['display_pk', 'project', 'change', 'commit_sha', 'user_with_avatar', 'status', 'result']
     list_filter = ['change__change_type', 'status']
     raw_id_fields = ['commit', 'change']
+    inlines = [TaskInline]
 
     def display_pk(self, build):
         return build.display_pk

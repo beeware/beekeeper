@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load build_status %}
 {% block content %}
   <div>
     <ol class="breadcrumb">
@@ -7,22 +8,121 @@
     </ol>
     <h1><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.title }} - {{ change.description }}<a href="{{ change.html_url }}"><i class="fa fa-github exit" aria-hidden="true"></i></a></h1>
 
-    <table class="table">
-        <thead>
+    <table class="table table-hover">
+        <thead class="thead-default">
             <tr>
                 <th>Build</th>
-                <th>Result</th>
-                <th>Status</th>
+                <th class="result">Status</th>
+                <th class="result">Result</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="builds">
     {% for build in change.builds.all %}
             <tr scope="row">
                 <td><a href="{{ build.get_absolute_url }}">{{ build.display_pk }}</a></td>
-                <td>{{ build.get_result_display }}</td>
-                <td>{{ build.get_status_display }}</td>
+                <td id="{{ build.display_pk }}-status" class="result">{{ build.get_status_display }}</td>
+                <td id="{{ build.display_pk }}-result" class="result">{% result build.result %}</td>
             </tr>
     {% endfor %}
         </tbody>
   </table>
+{% endblock %}
+
+{% block scripts %}
+
+{% if not change.is_complete %}
+function refresh() {
+    var xmlhttp=new XMLHttpRequest();
+
+    xmlhttp.open("GET", '{{ change.get_status_url }}');
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+            if (xmlhttp.status == 200) {
+                var response = JSON.parse(xmlhttp.responseText)
+                var status, result, builds, row, col, link
+
+                for (var slug in response.builds) {
+                    // Update task status
+                    status = document.getElementById(slug + '-status')
+                    if (status) {
+                        status.textContent = response['builds'][slug]['status']
+
+                        // Update result
+                        result = document.getElementById(slug + '-result')
+                        switch (response['builds'][slug]['result']) {
+                            case 0:
+                                result.innerHTML = '{% result 0 %}'
+                                break;
+                            case 10:
+                                result.innerHTML = '{% result 10 %}'
+                                break;
+                            case 19:
+                                result.innerHTML = '{% result 19 %}'
+                                break;
+                            case 20:
+                                result.innerHTML = '{% result 20 %}'
+                                break;
+                            default:
+                                result.innerHTML = '{% result 99 %}'
+                                break;
+                        }
+                    } else {
+                        row = document.createElement('tr')
+                        row.scope = "row"
+
+                        col = document.createElement('td')
+                        link = document.createElement('a')
+                        link.href = response['builds'][slug]['url']
+                        link.textContent = response['builds'][slug]['label']
+                        col.appendChild(link)
+                        row.appendChild(col)
+
+                        col = document.createElement('td')
+                        col.id = slug + '-status'
+                        col.className = 'minimal'
+                        col.textContent = response['builds'][slug]['status']
+                        row.appendChild(col)
+
+                        col = document.createElement('td')
+                        col.id = slug + '-result'
+                        col.className = 'minimal'
+                        switch (response['builds'][slug]['result']) {
+                            case 0:
+                                result.innerHTML = '{% result 0 %}'
+                                break;
+                            case 10:
+                                result.innerHTML = '{% result 10 %}'
+                                break;
+                            case 19:
+                                result.innerHTML = '{% result 19 %}'
+                                break;
+                            case 20:
+                                result.innerHTML = '{% result 20 %}'
+                                break;
+                            default:
+                                result.innerHTML = '{% result 99 %}'
+                                break;
+                        }
+                        row.appendChild(col)
+
+                        builds = document.getElementById('builds')
+                        builds.appendChild(row)
+                    }
+                }
+
+                if (!response['complete']) {
+                    window.setTimeout(refresh, 30000);
+                }
+            } else {
+                console.log('Error: ' + xmlhttp.statusText )
+            }
+        }
+    }
+    xmlhttp.send();
+}
+
+window.setTimeout(refresh, 30000);
+
+{% endif %}
+
 {% endblock %}

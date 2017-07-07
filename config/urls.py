@@ -20,7 +20,6 @@ from beekeeper import views as beekeeper
 
 
 urlpatterns = [
-    url(r'^django-rq/', include('django_rq.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^accounts/', include('django.contrib.auth.urls')),
 

@@ -1,2 +1,2 @@
 web: gunicorn config.wsgi
-worker: python ./manage.py rqworker default
+worker: celery worker -c 2 -A config --loglevel=INFO

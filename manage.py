@@ -7,7 +7,7 @@ if __name__ == "__main__":
     try:
         with open('.env') as envfile:
             for line in envfile:
-                if line.strip() and not line.startswith('#'):
+                if line.strip() and not line.strip().startswith('#'):
                     key, value = line.strip().split('=', 1)
                     os.environ.setdefault(key.strip(), value.strip())
     except FileNotFoundError:

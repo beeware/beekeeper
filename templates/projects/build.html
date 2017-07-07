@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load build_status %}
 {% block content %}
   <div>
     <ol class="breadcrumb">
@@ -9,10 +10,108 @@
     <h1>Build {{ build.display_pk }}</h1>
 
     <dl>
-        <dt>Build status</dt>
-        <dd>{{ build.get_status_display }}</dd>
+        <dt>Status</dt>
+        <dd id='status'>{{ build.get_status_display }}</dd>
 
-        <dt>Build result</dt>
-        <dd>{{ build.get_result_display }}</dd>
+        <dt>Result</dt>
+        <dd id='result'>{% result build.result %}</dd>
     </dl>
+
+    <table class="table table-hover">
+        <thead class="thead-default">
+            <tr>
+                <th>Task</th>
+                <th class="result">Status</th>
+                <th class="result">Result</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for task in build.tasks.all %}
+            <tr scope="row">
+                <td><a href="{{ task.get_absolute_url }}">{{ task.name }}</a></td>
+                <td class="result" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
+                <td class="result" id='{{ task.slug }}-result'>{% result task.result %}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+  </table>
+{% endblock %}
+
+
+{% block scripts %}
+
+{% if not build.is_finished %}
+function refresh() {
+    var xmlhttp=new XMLHttpRequest();
+
+    xmlhttp.open("GET", '{{ build.get_status_url }}');
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+            if (xmlhttp.status == 200) {
+                var response = JSON.parse(xmlhttp.responseText);
+
+                // Update status
+                var status = document.getElementById('status');
+                status.textContent = response['status']
+
+                // Update result
+                var result = document.getElementById('result');
+                switch (response['result']) {
+                    case 0:
+                        result.innerHTML = '{% result 0 %}'
+                        break;
+                    case 10:
+                        result.innerHTML = '{% result 10 %}'
+                        break;
+                    case 19:
+                        result.innerHTML = '{% result 19 %}'
+                        break;
+                    case 20:
+                        result.innerHTML = '{% result 20 %}'
+                        break;
+                    default:
+                        result.innerHTML = '{% result 99 %}'
+                        break;
+                }
+
+                for (var slug in response.tasks) {
+                    // Update task status
+                    status = document.getElementById(slug + '-status');
+                    status.textContent = response['tasks'][slug]['status']
+
+                    // Update result
+                    result = document.getElementById(slug + '-result');
+                    switch (response['tasks'][slug]['result']) {
+                        case 0:
+                            result.innerHTML = '{% result 0 %}'
+                            break;
+                        case 10:
+                            result.innerHTML = '{% result 10 %}'
+                            break;
+                        case 19:
+                            result.innerHTML = '{% result 19 %}'
+                            break;
+                        case 20:
+                            result.innerHTML = '{% result 20 %}'
+                            break;
+                        default:
+                            result.innerHTML = '{% result 99 %}'
+                            break;
+                    }
+                }
+
+                if (!response['finished']) {
+                    window.setTimeout(refresh, 10000);
+                }
+            } else {
+                console.log('Error: ' + xmlhttp.statusText)
+                window.setTimeout(refresh(response.nextToken), 30000);
+            }
+        }
+    }
+    xmlhttp.send();
+}
+
+window.setTimeout(refresh, 10000);
+{% endif %}
 {% endblock %}

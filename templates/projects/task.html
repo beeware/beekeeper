@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load build_status %}
+{% block content %}
+  <div>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ project.get_absolute_url }}"><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ change.get_absolute_url }}"><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.title }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ build.get_absolute_url }}">Build {{ build.display_pk }}</a></li>
+    </ol>
+    <h1>Build {{ build.display_pk }}: {{ task.name }}</h1>
+
+    <dl>
+        <dt>Status</dt>
+        <dd id='status'>{{ task.get_status_display }}</dd>
+
+        <dt>Result</dt>
+        <dd id='result'>{% result task.result %}</dd>
+    </dl>
+
+    <div id="log" class="log{% if not task.has_started %} hidden{% endif %}">
+        <h2>Log <i id='spinner' class="fa fa-spinner fa-spin fa-fw"></i></h2><pre id='log-data'>{{ log }}</pre>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+
+function refresh(nextToken) {
+    return function() {
+        var nextQuery = nextToken ? '?nextToken=' + nextToken : '';
+        var xmlhttp=new XMLHttpRequest();
+
+        xmlhttp.open("GET", '{{ task.get_status_url }}' + nextQuery);
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+                if (xmlhttp.status == 200) {
+                    var response = JSON.parse(xmlhttp.responseText);
+
+                    // Update status
+                    var status = document.getElementById('status');
+                    status.textContent = response['status']
+
+                    // Update result
+                    var result = document.getElementById('result');
+                    switch (response['result']) {
+                        case 0:
+                            result.innerHTML = '{% result 0 %}'
+                            break;
+                        case 10:
+                            result.innerHTML = '{% result 10 %}'
+                            break;
+                        case 19:
+                            result.innerHTML = '{% result 19 %}'
+                            break;
+                        case 20:
+                            result.innerHTML = '{% result 20 %}'
+                            break;
+                        default:
+                            result.innerHTML = '{% result 99 %}'
+                            break;
+                    }
+
+                    // If the task has actually started, make sure
+                    // the logs are visible, and append any new logs
+                    if (response.started) {
+                        var log = document.getElementById('log')
+                        log.className = 'log';
+
+                        var log_data = document.getElementById('log-data')
+                        var message = document.getElementById('message')
+                        if (response['log'] === null) {
+                            if (!message) {
+                                message = document.createElement('div')
+                                message.id = 'message'
+                                message.className = 'alert alert-warning'
+                                message.role = 'alert'
+
+                                log.insertBefore(message, log_data)
+                            }
+                            message.textContent = response['message']
+                        } else {
+                            if (message) {
+                                message.parentNode.removeChild(message)
+                            }
+
+                            log_data.textContent += response['log']
+                        }
+                    }
+
+                    // If the build has finished, remove the spinner.
+                    // Otherwise, queue the next update.
+                    if (response.finished) {
+                        var spinner = document.getElementById('spinner');
+                        spinner.parentNode.removeChild(spinner);
+                    } else {
+                        window.setTimeout(refresh(response.nextToken), 1000);
+                    }
+                } else {
+                    console.log('Error: ' + xmlhttp.statusText)
+                    window.setTimeout(refresh(nextToken), 30000);
+                }
+            }
+        }
+        xmlhttp.send();
+    }
+}
+
+window.setTimeout(refresh(), 0);
+
+{% endblock %}
