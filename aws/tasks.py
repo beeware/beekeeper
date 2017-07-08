@@ -13,7 +13,59 @@ from projects.models import Change, Build
 from aws.models import Task
 
 
+def task_configs(config):
+    task_data = []
+    for phase, phase_configs in enumerate(config):
+        for phase_name, phase_config in phase_configs.items():
+            if 'subtasks' in phase_config:
+                for task_configs in phase_config['subtasks']:
+                    for task_name, task_config in task_configs.items():
+                        # If a descriptor is provided at the subtask level,
+                        # use it; otherwise use the phase's task definition.
+                        descriptor = None
+                        if task_config:
+                            descriptor = task_config.get('task', None)
+                        if descriptor is None:
+                            descriptor = phase_config.get('task', None)
+                        if descriptor is None:
+                            raise ValueError("Subtask %s in phase %s task %s doesn't contain a task descriptor." % (
+                                task_name, phase, phase_name
+                            ))
+
+                        # The environment is the phase environment, overridden
+                        # by the task environment.
+                        task_env = phase_config.get('environment', {}).copy()
+                        if task_config:
+                            task_env.update(task_config.get('environment', {}))
+                            full_name = task_config.get('name', task_name)
+                        else:
+                            full_name = task_name
+
+                        task_data.append({
+                            'name': full_name,
+                            'slug': task_name,
+                            'phase': phase,
+                            'environment': task_env,
+                            'descriptor': descriptor,
+                        })
+
+            elif 'task' in phase_config:
+                task_data.append({
+                    'name': phase_config.get('name', phase_name),
+                    'slug': phase_name,
+                    'phase': phase,
+                    'environment': phase_config.get('environment', {}),
+                    'descriptor': phase_config['task'],
+                })
+            else:
+                raise ValueError("Phase %s task %s doesn't contain a task or subtask descriptor." % (
+                    phase, phase_name
+                ))
+    return task_data
+
+
 def create_tasks(build):
+    # Download the config file from Github.
     repository = GitHub(
             settings.GITHUB_USERNAME,
             password=settings.GITHUB_ACCESS_TOKEN
@@ -25,56 +77,20 @@ def create_tasks(build):
     if content is None:
         raise ValueError("Repository doesn't contain BeeKeeper config file.")
 
+    # Parse the raw configuration content and extract the appropriate phase.
     config = yaml.load(content.decoded.decode('utf-8'))
     if build.change.change_type == Change.CHANGE_TYPE_PULL_REQUEST:
         phases = config.get('pull_request', [])
     elif build.change.change_type == Change.CHANGE_TYPE_PUSH:
         phases = config.get('push', [])
 
-    for phase, phase_configs in enumerate(phases):
-        for phase_name, phase_config in phase_configs.items():
-            if 'subtasks' in phase_config:
-                for task_configs in phase_config['subtasks']:
-                    for task_name, task_config in task_configs.items():
-                        try:
-                            # If a descriptor is provided at the subtask level,
-                            # use it; otherwise use the phase's task definition.
-                            descriptor = task_config.get('task', phase_config['task'])
-
-                            # The environment is the phase environment, overridden
-                            # by the task environment.
-                            task_env = phase_config.get('environment', {})
-                            task_env.update(task_config.get('environment', {}))
-
-                            print("Created phase %s subtask %s" % (phase, phase_name))
-                            task = Task.objects.create(
-                                build=build,
-                                name=task_config.get('name', task_name),
-                                slug=task_name,
-                                phase=phase,
-                                environment=task_env,
-                                descriptor=descriptor,
-                            )
-                        except KeyError:
-                            raise ValueError("Subtask %s in phase %s task %s doesn't contain a task descriptor." % (
-                                task_name, phase, phase_name
-                            ))
-
-            elif 'task' in phase_config:
-                print("Created phase %s task %s" % (phase, phase_name))
-                task = Task.objects.create(
-                    build=build,
-                    name=phase_config.get('name', phase_name),
-                    slug=phase_name,
-                    phase=phase,
-                    environment=phase_config.get('environment', {}),
-                    descriptor=phase_config['task'],
-                )
-            else:
-                raise ValueError("Phase %s task %s doesn't contain a task or subtask descriptor." % (
-                    phase, phase_name
-                ))
-    return errors
+    # Parse the phase configuration and create tasks
+    for task_config in task_configs(phases):
+        print("Created phase %s task %s" % (phase, phase_name))
+        Task.objects.create(
+            build=build,
+            **task_config
+        )
 
 
 @app.task(bind=True)
