@@ -89,13 +89,13 @@ function refresh() {
 
                             col = document.createElement('td')
                             col.id = slug + '-status'
-                            col.className = 'minimal'
+                            col.className = 'result'
                             col.textContent = response['builds'][slug]['status']
                             row.appendChild(col)
 
                             col = document.createElement('td')
                             col.id = slug + '-result'
-                            col.className = 'minimal'
+                            col.className = 'result'
                             switch (response['builds'][slug]['result']) {
                                 case 0:
                                     col.innerHTML = '{% result 0 %}'
