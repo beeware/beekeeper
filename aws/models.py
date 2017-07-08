@@ -146,7 +146,7 @@ class Task(models.Model):
                                 'name': key,
                                 'value': value
                             }
-                            for key, value in environment
+                            for key, value in environment.items()
                         ],
                     }
                 ]
