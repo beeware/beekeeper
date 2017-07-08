@@ -143,7 +143,7 @@ def pull_request_handler(payload):
             pull_request=pr,
             commit=commit,
         )
-    update.created = datetime_parser.parse(pr_data['created_at'])
+    update.created = datetime_parser.parse(pr_data['updated_at'])
     update.save()
 
     if payload['action'] in ['opened', 'synchronize']:
