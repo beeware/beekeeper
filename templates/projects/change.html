@@ -115,7 +115,7 @@ function refresh() {
                         row.appendChild(col)
 
                         builds = document.getElementById('builds')
-                        builds.appendChild(row)
+                        builds.insertBefore(row, builds.builds.getElementsByTagName('tr')[0])
                     }
                 }
 
