@@ -97,19 +97,19 @@ function refresh() {
                         col.className = 'minimal'
                         switch (response['builds'][slug]['result']) {
                             case 0:
-                                result.innerHTML = '{% result 0 %}'
+                                col.innerHTML = '{% result 0 %}'
                                 break;
                             case 10:
-                                result.innerHTML = '{% result 10 %}'
+                                col.innerHTML = '{% result 10 %}'
                                 break;
                             case 19:
-                                result.innerHTML = '{% result 19 %}'
+                                col.innerHTML = '{% result 19 %}'
                                 break;
                             case 20:
-                                result.innerHTML = '{% result 20 %}'
+                                col.innerHTML = '{% result 20 %}'
                                 break;
                             default:
-                                result.innerHTML = '{% result 99 %}'
+                                col.innerHTML = '{% result 99 %}'
                                 break;
                         }
                         row.appendChild(col)
