@@ -23,7 +23,7 @@
     </dl>
 
     <div id="log" class="log{% if not task.has_started %} hidden{% endif %}">
-        <h2>Log <i id='spinner' class="fa fa-spinner fa-spin fa-fw"></i></h2><pre id='log-data'>{{ log }}</pre>
+        <h2>Log <i id='log-spinner' class="fa fa-spinner fa-spin fa-fw"></i></h2><pre id='log-data'>{{ log }}</pre>
     </div>
 
 {% endblock %}
@@ -99,7 +99,7 @@ function refresh(nextToken) {
                     // If the build has finished, remove the spinner.
                     // Otherwise, queue the next update.
                     if (response.finished) {
-                        var spinner = document.getElementById('spinner');
+                        var spinner = document.getElementById('log-spinner');
                         spinner.parentNode.removeChild(spinner);
                     } else {
                         window.setTimeout(refresh(response.nextToken), 1000);
