@@ -8,7 +8,11 @@
         <li class="breadcrumb-item"><a href="{{ change.get_absolute_url }}"><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.title }}</a></li>
         <li class="breadcrumb-item"><a href="{{ build.get_absolute_url }}">Build {{ build.display_pk }}</a></li>
     </ol>
-    <h1>Build {{ build.display_pk }}: {{ task.name }}</h1>
+    <h1>Build {{ build.display_pk }}: {{ task.name }}
+        <a href="{{ build.change.html_url }}"><i class="fa fa-github exit float-right" aria-hidden="true"></i></a>
+        <i id='spinner' class="fa fa-spinner fa-spin fa-fw float-right hidden"></i>
+        <i id='error' class="fa fa-exclamation-triangle float-right hidden"></i>
+    </h1>
 
     <dl>
         <dt>Status</dt>
@@ -31,8 +35,12 @@ function refresh(nextToken) {
         var nextQuery = nextToken ? '?nextToken=' + nextToken : '';
         var xmlhttp=new XMLHttpRequest();
 
+        document.getElementById('spinner').style.display = 'inline'
+        document.getElementById('error').style.display = 'none'
+
         xmlhttp.open("GET", '{{ task.get_status_url }}' + nextQuery);
         xmlhttp.onreadystatechange = function() {
+            document.getElementById('spinner').style.display = 'none'
             if (xmlhttp.readyState == XMLHttpRequest.DONE) {
                 if (xmlhttp.status == 200) {
                     var response = JSON.parse(xmlhttp.responseText);
@@ -97,6 +105,7 @@ function refresh(nextToken) {
                         window.setTimeout(refresh(response.nextToken), 1000);
                     }
                 } else {
+                    document.getElementById('error').style.display = 'inline'
                     console.log('Error: ' + xmlhttp.statusText)
                     window.setTimeout(refresh(nextToken), 30000);
                 }

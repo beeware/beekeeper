@@ -150,6 +150,13 @@ class Change(models.Model):
             return self.push.commit.user
 
     @property
+    def html_url(self):
+        if self.pull_request:
+            return self.pull_request.html_url
+        else:
+            return self.push.commit.url
+
+    @property
     def is_complete(self):
         return self.status in (Change.STATUS_ATTIC, Change.STATUS_IGNORED)
 

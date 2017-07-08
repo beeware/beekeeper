@@ -56,7 +56,7 @@ def create_tasks(build):
                                 descriptor=descriptor,
                             )
                         except KeyError:
-                            raise ValueError("Subtask %s in phase %s task %s doesn't contain a task descriptor" % (
+                            raise ValueError("Subtask %s in phase %s task %s doesn't contain a task descriptor." % (
                                 task_name, phase, phase_name
                             ))
 
@@ -71,7 +71,7 @@ def create_tasks(build):
                     descriptor=phase_config['task'],
                 )
             else:
-                raise ValueError("Phase %s task %s doesn't contain a task or subtask descriptor" % (
+                raise ValueError("Phase %s task %s doesn't contain a task or subtask descriptor." % (
                     phase, phase_name
                 ))
     return errors
