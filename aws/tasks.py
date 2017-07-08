@@ -86,7 +86,7 @@ def create_tasks(build):
 
     # Parse the phase configuration and create tasks
     for task_config in task_configs(phases):
-        print("Created phase %s task %s" % (phase, phase_name))
+        print("Created phase %(phase)s task %(name)s" % task_config)
         Task.objects.create(
             build=build,
             **task_config
