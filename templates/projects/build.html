@@ -54,43 +54,19 @@ function refresh() {
 
     xmlhttp.open("GET", '{{ build.get_status_url }}');
     xmlhttp.onreadystatechange = function() {
-        document.getElementById('spinner').style.display = 'none'
-        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (xmlhttp.status == 200) {
-                var response = JSON.parse(xmlhttp.responseText);
+        try {
+            document.getElementById('spinner').style.display = 'none'
+            if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+                if (xmlhttp.status == 200) {
+                    var response = JSON.parse(xmlhttp.responseText);
 
-                // Update status
-                var status = document.getElementById('status');
-                status.textContent = response['status']
-
-                // Update result
-                var result = document.getElementById('result');
-                switch (response['result']) {
-                    case 0:
-                        result.innerHTML = '{% result 0 %}'
-                        break;
-                    case 10:
-                        result.innerHTML = '{% result 10 %}'
-                        break;
-                    case 19:
-                        result.innerHTML = '{% result 19 %}'
-                        break;
-                    case 20:
-                        result.innerHTML = '{% result 20 %}'
-                        break;
-                    default:
-                        result.innerHTML = '{% result 99 %}'
-                        break;
-                }
-
-                for (var slug in response.tasks) {
-                    // Update task status
-                    status = document.getElementById(slug + '-status');
-                    status.textContent = response['tasks'][slug]['status']
+                    // Update status
+                    var status = document.getElementById('status');
+                    status.textContent = response['status']
 
                     // Update result
-                    result = document.getElementById(slug + '-result');
-                    switch (response['tasks'][slug]['result']) {
+                    var result = document.getElementById('result');
+                    switch (response['result']) {
                         case 0:
                             result.innerHTML = '{% result 0 %}'
                             break;
@@ -107,16 +83,46 @@ function refresh() {
                             result.innerHTML = '{% result 99 %}'
                             break;
                     }
-                }
 
-                if (!response['finished']) {
-                    window.setTimeout(refresh, 10000);
+                    for (var slug in response.tasks) {
+                        // Update task status
+                        status = document.getElementById(slug + '-status');
+                        status.textContent = response['tasks'][slug]['status']
+
+                        // Update result
+                        result = document.getElementById(slug + '-result');
+                        switch (response['tasks'][slug]['result']) {
+                            case 0:
+                                result.innerHTML = '{% result 0 %}'
+                                break;
+                            case 10:
+                                result.innerHTML = '{% result 10 %}'
+                                break;
+                            case 19:
+                                result.innerHTML = '{% result 19 %}'
+                                break;
+                            case 20:
+                                result.innerHTML = '{% result 20 %}'
+                                break;
+                            default:
+                                result.innerHTML = '{% result 99 %}'
+                                break;
+                        }
+                    }
+
+                    if (!response['finished']) {
+                        window.setTimeout(refresh, 10000);
+                    }
+                } else {
+                    document.getElementById('error').style.display = 'inline'
+                    console.log('Error: ' + xmlhttp.statusText)
+                    window.setTimeout(refresh(response.nextToken), 30000);
                 }
-            } else {
-                document.getElementById('error').style.display = 'inline'
-                console.log('Error: ' + xmlhttp.statusText)
-                window.setTimeout(refresh(response.nextToken), 30000);
             }
+        } catch (e) {
+            document.getElementById('error').style.display = 'inline'
+            console.log('Error: ' + e)
+            window.setTimeout(refresh, 30000)
         }
     }
     xmlhttp.send();

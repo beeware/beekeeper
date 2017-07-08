@@ -44,89 +44,95 @@ function refresh() {
 
     xmlhttp.open("GET", '{{ change.get_status_url }}');
     xmlhttp.onreadystatechange = function() {
-        document.getElementById('spinner').style.display = 'none'
-        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (xmlhttp.status == 200) {
-                var response = JSON.parse(xmlhttp.responseText)
-                var status, result, builds, row, col, link
+        try {
+            document.getElementById('spinner').style.display = 'none'
+            if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+                if (xmlhttp.status == 200) {
+                    var response = JSON.parse(xmlhttp.responseText)
+                    var status, result, builds, row, col, link
 
-                for (var slug in response.builds) {
-                    // Update task status
-                    status = document.getElementById(slug + '-status')
-                    if (status) {
-                        status.textContent = response['builds'][slug]['status']
+                    for (var slug in response.builds) {
+                        // Update task status
+                        status = document.getElementById(slug + '-status')
+                        if (status) {
+                            status.textContent = response['builds'][slug]['status']
 
-                        // Update result
-                        result = document.getElementById(slug + '-result')
-                        switch (response['builds'][slug]['result']) {
-                            case 0:
-                                result.innerHTML = '{% result 0 %}'
-                                break;
-                            case 10:
-                                result.innerHTML = '{% result 10 %}'
-                                break;
-                            case 19:
-                                result.innerHTML = '{% result 19 %}'
-                                break;
-                            case 20:
-                                result.innerHTML = '{% result 20 %}'
-                                break;
-                            default:
-                                result.innerHTML = '{% result 99 %}'
-                                break;
+                            // Update result
+                            result = document.getElementById(slug + '-result')
+                            switch (response['builds'][slug]['result']) {
+                                case 0:
+                                    result.innerHTML = '{% result 0 %}'
+                                    break;
+                                case 10:
+                                    result.innerHTML = '{% result 10 %}'
+                                    break;
+                                case 19:
+                                    result.innerHTML = '{% result 19 %}'
+                                    break;
+                                case 20:
+                                    result.innerHTML = '{% result 20 %}'
+                                    break;
+                                default:
+                                    result.innerHTML = '{% result 99 %}'
+                                    break;
+                            }
+                        } else {
+                            row = document.createElement('tr')
+                            row.scope = "row"
+
+                            col = document.createElement('td')
+                            link = document.createElement('a')
+                            link.href = response['builds'][slug]['url']
+                            link.textContent = response['builds'][slug]['label']
+                            col.appendChild(link)
+                            row.appendChild(col)
+
+                            col = document.createElement('td')
+                            col.id = slug + '-status'
+                            col.className = 'minimal'
+                            col.textContent = response['builds'][slug]['status']
+                            row.appendChild(col)
+
+                            col = document.createElement('td')
+                            col.id = slug + '-result'
+                            col.className = 'minimal'
+                            switch (response['builds'][slug]['result']) {
+                                case 0:
+                                    col.innerHTML = '{% result 0 %}'
+                                    break;
+                                case 10:
+                                    col.innerHTML = '{% result 10 %}'
+                                    break;
+                                case 19:
+                                    col.innerHTML = '{% result 19 %}'
+                                    break;
+                                case 20:
+                                    col.innerHTML = '{% result 20 %}'
+                                    break;
+                                default:
+                                    col.innerHTML = '{% result 99 %}'
+                                    break;
+                            }
+                            row.appendChild(col)
+
+                            builds = document.getElementById('builds')
+                            builds.insertBefore(row, builds.getElementsByTagName('tr')[0])
                         }
-                    } else {
-                        row = document.createElement('tr')
-                        row.scope = "row"
-
-                        col = document.createElement('td')
-                        link = document.createElement('a')
-                        link.href = response['builds'][slug]['url']
-                        link.textContent = response['builds'][slug]['label']
-                        col.appendChild(link)
-                        row.appendChild(col)
-
-                        col = document.createElement('td')
-                        col.id = slug + '-status'
-                        col.className = 'minimal'
-                        col.textContent = response['builds'][slug]['status']
-                        row.appendChild(col)
-
-                        col = document.createElement('td')
-                        col.id = slug + '-result'
-                        col.className = 'minimal'
-                        switch (response['builds'][slug]['result']) {
-                            case 0:
-                                col.innerHTML = '{% result 0 %}'
-                                break;
-                            case 10:
-                                col.innerHTML = '{% result 10 %}'
-                                break;
-                            case 19:
-                                col.innerHTML = '{% result 19 %}'
-                                break;
-                            case 20:
-                                col.innerHTML = '{% result 20 %}'
-                                break;
-                            default:
-                                col.innerHTML = '{% result 99 %}'
-                                break;
-                        }
-                        row.appendChild(col)
-
-                        builds = document.getElementById('builds')
-                        builds.insertBefore(row, builds.getElementsByTagName('tr')[0])
                     }
-                }
 
-                if (!response['complete']) {
-                    window.setTimeout(refresh, 30000);
+                    if (!response['complete']) {
+                        window.setTimeout(refresh, 30000)
+                    }
+                } else {
+                    document.getElementById('error').style.display = 'inline'
+                    console.log('Error: ' + xmlhttp.statusText)
+                    window.setTimeout(refresh, 30000)
                 }
-            } else {
-                document.getElementById('error').style.display = 'inline'
-                console.log('Error: ' + xmlhttp.statusText)
-                window.setTimeout(refresh, 30000);
             }
+        } catch(e) {
+            document.getElementById('error').style.display = 'inline'
+            console.log('Error: ' + e)
+            window.setTimeout(refresh, 30000)
         }
     }
     xmlhttp.send();

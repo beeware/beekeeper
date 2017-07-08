@@ -40,75 +40,81 @@ function refresh(nextToken) {
 
         xmlhttp.open("GET", '{{ task.get_status_url }}' + nextQuery);
         xmlhttp.onreadystatechange = function() {
-            document.getElementById('spinner').style.display = 'none'
-            if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-                if (xmlhttp.status == 200) {
-                    var response = JSON.parse(xmlhttp.responseText);
+            try {
+                document.getElementById('spinner').style.display = 'none'
+                if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+                    if (xmlhttp.status == 200) {
+                        var response = JSON.parse(xmlhttp.responseText);
 
-                    // Update status
-                    var status = document.getElementById('status');
-                    status.textContent = response['status']
+                        // Update status
+                        var status = document.getElementById('status');
+                        status.textContent = response['status']
 
-                    // Update result
-                    var result = document.getElementById('result');
-                    switch (response['result']) {
-                        case 0:
-                            result.innerHTML = '{% result 0 %}'
-                            break;
-                        case 10:
-                            result.innerHTML = '{% result 10 %}'
-                            break;
-                        case 19:
-                            result.innerHTML = '{% result 19 %}'
-                            break;
-                        case 20:
-                            result.innerHTML = '{% result 20 %}'
-                            break;
-                        default:
-                            result.innerHTML = '{% result 99 %}'
-                            break;
-                    }
-
-                    // If the task has actually started, make sure
-                    // the logs are visible, and append any new logs
-                    if (response.started) {
-                        var log = document.getElementById('log')
-                        log.className = 'log';
-
-                        var log_data = document.getElementById('log-data')
-                        var message = document.getElementById('message')
-                        if (response['log'] === null) {
-                            if (!message) {
-                                message = document.createElement('div')
-                                message.id = 'message'
-                                message.className = 'alert alert-warning'
-                                message.role = 'alert'
-
-                                log.insertBefore(message, log_data)
-                            }
-                            message.textContent = response['message']
-                        } else {
-                            if (message) {
-                                message.parentNode.removeChild(message)
-                            }
-
-                            log_data.textContent += response['log']
+                        // Update result
+                        var result = document.getElementById('result');
+                        switch (response['result']) {
+                            case 0:
+                                result.innerHTML = '{% result 0 %}'
+                                break;
+                            case 10:
+                                result.innerHTML = '{% result 10 %}'
+                                break;
+                            case 19:
+                                result.innerHTML = '{% result 19 %}'
+                                break;
+                            case 20:
+                                result.innerHTML = '{% result 20 %}'
+                                break;
+                            default:
+                                result.innerHTML = '{% result 99 %}'
+                                break;
                         }
-                    }
 
-                    // If the build has finished, remove the spinner.
-                    // Otherwise, queue the next update.
-                    if (response.finished) {
-                        var spinner = document.getElementById('log-spinner');
-                        spinner.parentNode.removeChild(spinner);
+                        // If the task has actually started, make sure
+                        // the logs are visible, and append any new logs
+                        if (response.started) {
+                            var log = document.getElementById('log')
+                            log.className = 'log';
+
+                            var log_data = document.getElementById('log-data')
+                            var message = document.getElementById('message')
+                            if (response['log'] === null) {
+                                if (!message) {
+                                    message = document.createElement('div')
+                                    message.id = 'message'
+                                    message.className = 'alert alert-warning'
+                                    message.role = 'alert'
+
+                                    log.insertBefore(message, log_data)
+                                }
+                                message.textContent = response['message']
+                            } else {
+                                if (message) {
+                                    message.parentNode.removeChild(message)
+                                }
+
+                                log_data.textContent += response['log']
+                            }
+                        }
+
+                        // If the build has finished, remove the spinner.
+                        // Otherwise, queue the next update.
+                        if (response.finished) {
+                            var spinner = document.getElementById('log-spinner');
+                            spinner.parentNode.removeChild(spinner);
+                        } else {
+                            window.setTimeout(refresh(response.nextToken), 1000);
+                        }
                     } else {
-                        window.setTimeout(refresh(response.nextToken), 1000);
+                        document.getElementById('error').style.display = 'inline'
+                        console.log('Error: ' + xmlhttp.statusText)
+                        window.setTimeout(refresh(nextToken), 30000);
                     }
-                } else {
-                    document.getElementById('error').style.display = 'inline'
-                    console.log('Error: ' + xmlhttp.statusText)
-                    window.setTimeout(refresh(nextToken), 30000);
                 }
+            } catch (e) {
+                document.getElementById('error').style.display = 'inline'
+                console.log('Error: ' + e)
+                window.setTimeout(refresh, 30000)
             }
         }
         xmlhttp.send();
