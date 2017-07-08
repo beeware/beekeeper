@@ -143,8 +143,8 @@ class Task(models.Model):
                         'name': self.descriptor,
                         'environment': [
                             {
-                                'name': key,
-                                'value': value
+                                'name': str(key),
+                                'value': str(value)
                             }
                             for key, value in environment.items()
                         ],

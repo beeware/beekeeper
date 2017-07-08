@@ -62,6 +62,7 @@ def restart_build(modeladmin, request, queryset):
     for obj in queryset:
         obj.tasks.all().delete()
         obj.status = Build.STATUS_CREATED
+        obj.error = ''
         obj.save()
         obj.start()
         messages.info(request, 'Restarting build %s' % obj)
@@ -71,6 +72,7 @@ restart_build.short_description = "Restart build"
 def resume_build(modeladmin, request, queryset):
     for obj in queryset:
         obj.status = Build.STATUS_RUNNING
+        obj.error = ''
         obj.save()
         obj.start()
         messages.info(request, 'Resuming build %s' % obj)
