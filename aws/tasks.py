@@ -1,5 +1,7 @@
 import boto3
 
+from github3 import GitHub
+
 import yaml
 
 from config.celery import app
@@ -7,7 +9,8 @@ from config.celery import app
 from django.conf import settings
 from django.utils import timezone
 
-from projects.models import Change, Build, Task
+from projects.models import Change, Build
+from aws.models import Task
 
 
 def create_tasks(build):
@@ -20,40 +23,58 @@ def create_tasks(build):
         )
     content = repository.contents('beekeeper.yml', ref=build.commit.sha)
     if content is None:
-        return ValueError("Repository doesn't contain BeeKeeper config file")
+        raise ValueError("Repository doesn't contain BeeKeeper config file.")
 
     config = yaml.load(content.decoded.decode('utf-8'))
     if build.change.change_type == Change.CHANGE_TYPE_PULL_REQUEST:
-        phases = config['pull_request']
+        phases = config.get('pull_request', [])
     elif build.change.change_type == Change.CHANGE_TYPE_PUSH:
-        phases = config['push']
+        phases = config.get('push', [])
 
     for phase, phase_configs in enumerate(phases):
         for phase_name, phase_config in phase_configs.items():
-            if 'task' in phase_config:
+            if 'subtasks' in phase_config:
+                for task_configs in phase_config['subtasks']:
+                    for task_name, task_config in task_configs.items():
+                        try:
+                            # If a descriptor is provided at the subtask level,
+                            # use it; otherwise use the phase's task definition.
+                            descriptor = task_config.get('task', phase_config['task'])
+
+                            # The environment is the phase environment, overridden
+                            # by the task environment.
+                            task_env = phase_config.get('environment', {})
+                            task_env.update(task_config.get('environment', {}))
+
+                            print("Created phase %s subtask %s" % (phase, phase_name))
+                            task = Task.objects.create(
+                                build=build,
+                                name=task_config.get('name', task_name),
+                                slug=task_name,
+                                phase=phase,
+                                environment=task_env,
+                                descriptor=descriptor,
+                            )
+                        except KeyError:
+                            raise ValueError("Subtask %s in phase %s task %s doesn't contain a task descriptor" % (
+                                task_name, phase, phase_name
+                            ))
+
+            elif 'task' in phase_config:
                 print("Created phase %s task %s" % (phase, phase_name))
                 task = Task.objects.create(
                     build=build,
                     name=phase_config.get('name', phase_name),
                     slug=phase_name,
                     phase=phase,
+                    environment=phase_config.get('environment', {}),
                     descriptor=phase_config['task'],
                 )
-            elif 'subtasks' in phase_config:
-                for task_configs in phase_config['subtasks']:
-                    for task_name, task_config in task_configs.items():
-                        print("Created phase %s subtask %s" % (phase, phase_name))
-                        task = Task.objects.create(
-                            build=build,
-                            name=task_config.get('name', task_name),
-                            slug=task_name,
-                            phase=phase,
-                            descriptor=task_config['task'],
-                        )
             else:
-                print("Phase %s task %s doesn't contain a task or subtask descriptor" % (phase, phase_name))
-
-
+                raise ValueError("Phase %s task %s doesn't contain a task or subtask descriptor" % (
+                    phase, phase_name
+                ))
+    return errors
 
 
 @app.task(bind=True)
@@ -86,10 +107,11 @@ def check_build(self, build_pk):
                     print("Starting task %s..." % task.name)
                     task.start(ecs_client)
             else:
-                raise RuntimeError('No phase 0 tasks defined')
+                raise ValueError("No phase 0 tasks defined for build type '%s'" % build.change.change_type)
         except Exception as e:
             print("Error creating tasks: %s" % e)
             build.status = Build.STATUS_ERROR
+            build.error = str(e)
             build.save()
 
     elif build.status == Build.STATUS_RUNNING:
@@ -141,6 +163,7 @@ def check_build(self, build_pk):
             if build.tasks.error().exists():
                 build.status = Build.STATUS_ERROR
                 build.result = Build.RESULT_FAILED
+                build.error = "%s tasks generated errors" % build.tasks.error().count()
             else:
                 build.status = Build.STATUS_DONE
                 build.result = min(t.result for t in build.tasks.all())

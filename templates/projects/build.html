@@ -11,7 +11,7 @@
 
     <dl>
         <dt>Status</dt>
-        <dd id='status'>{{ build.get_status_display }}</dd>
+        <dd id='status'>{{ build.get_status_display }}{% if build.error %}: {{ build.error }}{% endif %}</dd>
 
         <dt>Result</dt>
         <dd id='result'>{% result build.result %}</dd>

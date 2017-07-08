@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from github import models as github
 
+from .signals import start_build
 
 
 class StatusQuerySet(models.QuerySet):
@@ -224,6 +225,8 @@ class Build(models.Model):
     created = models.DateTimeField(default=timezone.now)
     updated = models.DateTimeField(auto_now=True)
 
+    error = models.TextField(blank=True)
+
     class Meta:
         ordering = ('-updated',)
 
@@ -264,150 +267,18 @@ class Build(models.Model):
         )
 
     def start(self):
-        from .tasks import check_build
-        check_build.delay(str(self.pk))
+        start_build.send(sender=Build, build=self)
 
     def stop(self):
-        # Mark the build as stopping. This will be picked up on
-        # the next iteration of the build check, terminating any
+        # If the build has not been started yet, mark it as stopped. If the
+        # build has been started, mark the build as stopping. This will be
+        # picked up on the next iteration of the build check, terminating any
         # tasks that are underway.
-        assert self.status == Build.STATUS_RUNNING
-        self.status = Build.STATUS_STOPPING
-        self.save()
-
-
-
-class TaskQuerySet(models.QuerySet):
-    def started(self):
-        return self.filter(status__in=(
-                    Task.STATUS_PENDING,
-                    Task.STATUS_RUNNING,
-                ))
-
-    def not_finished(self):
-        return self.filter(status__in=(
-                    Task.STATUS_CREATED,
-                    Task.STATUS_PENDING,
-                    Task.STATUS_RUNNING,
-                    Task.STATUS_STOPPING,
-                ))
-
-    def running(self):
-        return self.filter(status=Task.STATUS_RUNNING)
-
-    def stopping(self):
-        return self.filter(status=Task.STATUS_STOPPING)
-
-    def finished(self):
-        return self.filter(status__in=[
-                                Task.STATUS_DONE,
-                                Task.STATUS_ERROR,
-                                Task.STATUS_STOPPED,
-                            ])
-
-    def done(self):
-        return self.filter(status=Task.STATUS_DONE)
-
-    def error(self):
-        return self.filter(status=Task.STATUS_ERROR)
-
-
-class Task(models.Model):
-    STATUS_CREATED = Build.STATUS_CREATED
-    STATUS_PENDING = Build.STATUS_PENDING
-    STATUS_RUNNING = Build.STATUS_RUNNING
-    STATUS_DONE = Build.STATUS_DONE
-    STATUS_ERROR = Build.STATUS_ERROR
-    STATUS_STOPPING = Build.STATUS_STOPPING
-    STATUS_STOPPED = Build.STATUS_STOPPED
-
-    STATUS_CHOICES = [
-        (STATUS_CREATED, 'Created'),
-        (STATUS_PENDING, 'Pending'),
-        (STATUS_RUNNING, 'Running'),
-        (STATUS_DONE, 'Done'),
-        (STATUS_ERROR, 'Error'),
-        (STATUS_STOPPING, 'Stopping'),
-        (STATUS_STOPPED, 'Stopped'),
-    ]
-    objects = TaskQuerySet.as_manager()
-
-    build = models.ForeignKey(Build, related_name='tasks')
-    status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_CREATED)
-    result = models.IntegerField(choices=Build.RESULT_CHOICES, default=Build.RESULT_PENDING)
-
-    name = models.CharField(max_length=100, db_index=True)
-    slug = models.CharField(max_length=100, db_index=True)
-
-    phase = models.IntegerField()
-    started = models.DateTimeField(null=True, blank=True)
-    updated = models.DateTimeField(auto_now=True)
-    completed = models.DateTimeField(null=True, blank=True)
-
-    descriptor = models.CharField(max_length=100)
-    arn = models.CharField(max_length=100, null=True, blank=True)
-
-    class Meta:
-        ordering = ('phase', 'name',)
-        unique_together = [('build', 'slug')]
-
-    def get_absolute_url(self):
-        return reverse('projects:task', kwargs={
-                    'owner': self.build.change.project.repository.owner.login,
-                    'repo_name': self.build.change.project.repository.name,
-                    'change_pk': str(self.build.change.pk),
-                    'build_pk': str(self.build.pk),
-                    'task_slug': self.slug
-                })
-
-    def get_status_url(self):
-        return reverse('projects:task-status', kwargs={
-                    'owner': self.build.change.project.repository.owner.login,
-                    'repo_name': self.build.change.project.repository.name,
-                    'change_pk': str(self.build.change.pk),
-                    'build_pk': str(self.build.pk),
-                    'task_slug': self.slug
-                })
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def has_started(self):
-        return self.status in [
-            Task.STATUS_RUNNING,
-            Task.STATUS_DONE,
-            Task.STATUS_ERROR,
-        ]
-
-    @property
-    def is_finished(self):
-        return self.status in (
-            Build.STATUS_DONE,
-            Build.STATUS_ERROR,
-            Build.STATUS_STOPPED
-        )
-
-    @property
-    def log_stream_name(self):
-        return '%s/%s/%s' % (
-            self.descriptor, self.descriptor, self.arn.rsplit('/', 1)[1]
-        )
-
-    def start(self, ecs_client):
-        response = ecs_client.run_task(
-            cluster=settings.AWS_ECS_CLUSTER_NAME,
-            taskDefinition=self.descriptor,
-        )
-        self.arn = response['tasks'][0]['taskArn']
-        self.status = Task.STATUS_PENDING
-        self.started = timezone.now()
-        self.save()
-
-    def stop(self, ecs_client):
-        response = ecs_client.stop_task(
-            cluster=settings.AWS_ECS_CLUSTER_NAME,
-            task=self.arn
-        )
-        self.status = Task.STATUS_STOPPING
-        self.save()
+        if self.status == Build.STATUS_CREATED:
+            self.status = Build.STATUS_STOPPED
+            self.save()
+        elif self.status == Build.STATUS_RUNNING:
+            self.status = Build.STATUS_STOPPING
+            self.save()
+        else:
+            raise RuntimeError("Build %s isn't running")

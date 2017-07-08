@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from django.core.management.base import BaseCommand
 from github import hooks as github_hooks
@@ -8,8 +9,8 @@ from github import hooks as github_hooks
 class Command(BaseCommand):
     help = 'Replay a directory of Github webhook data.'
     missing_args_message = (
-        "No database fixture specified. Please provide the path of at least "
-        "one fixture in the command line."
+        "No replay directory specified. Please provide the path of at least "
+        "one replay directory in the command line."
     )
 
     def add_arguments(self, parser):
@@ -34,7 +35,7 @@ class Command(BaseCommand):
                         payload = json.load(data)
 
                     github_hooks[hook_type](payload)
-
+                    time.sleep(1)
                 except ValueError:
                     self.stderr.write('Ignoring file %s' % filename)
                 except KeyError:
@@ -42,7 +43,3 @@ class Command(BaseCommand):
                         self.stdout.write(
                             "No handler for %s events" % hook_type
                         )
-
-
-
-

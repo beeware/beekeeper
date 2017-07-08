@@ -1,7 +1,9 @@
+from django.apps import apps
+from django.conf import settings
 from django.contrib import admin, messages
 from django.utils.safestring import mark_safe
 
-from .models import Project, Change, Build, Task
+from .models import Project, Change, Build
 
 
 def approve(modeladmin, request, queryset):
@@ -56,9 +58,28 @@ class ChangeAdmin(admin.ModelAdmin):
     title.short_description = 'Title'
 
 
+def restart_build(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.tasks.all().delete()
+        obj.status = Build.STATUS_CREATED
+        obj.save()
+        obj.start()
+        messages.info(request, 'Restarting build %s' % obj)
+restart_build.short_description = "Restart build"
+
+
+def resume_build(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.status = Build.STATUS_RUNNING
+        obj.save()
+        obj.start()
+        messages.info(request, 'Resuming build %s' % obj)
+resume_build.short_description = "Resume build"
+
+
 class TaskInline(admin.TabularInline):
-    model = Task
-    list_display = ['slug', 'name', 'phase', 'image', 'status', 'result']
+    model = apps.get_model(settings.BUILD_APP, 'Task')
+    fields = ['name', 'phase', 'status', 'result']
     extra = 0
 
 
@@ -67,6 +88,7 @@ class BuildAdmin(admin.ModelAdmin):
     list_display = ['display_pk', 'project', 'change', 'commit_sha', 'user_with_avatar', 'status', 'result']
     list_filter = ['change__change_type', 'status']
     raw_id_fields = ['commit', 'change']
+    actions = [restart_build, resume_build]
     inlines = [TaskInline]
 
     def display_pk(self, build):
