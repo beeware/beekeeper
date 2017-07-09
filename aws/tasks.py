@@ -200,7 +200,7 @@ def check_build(self, build_pk):
                 build.status = Build.STATUS_ERROR
                 build.result = Build.RESULT_FAILED
                 build.error = "%s tasks generated errors" % build.tasks.error().count()
-            elif complete_tasks.failed().exists():
+            elif completed_tasks.failed().exists():
                 print("Failures encountered during phase %s" % completed_phase)
                 new_tasks = None
                 build.status = Build.STATUS_DONE
