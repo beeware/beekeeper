@@ -46,7 +46,7 @@ class TaskQuerySet(models.QuerySet):
         return self.filter(status=Task.STATUS_ERROR)
 
     def failed(self):
-        return self.filter(result=Build.RESULT_FAILED)
+        return self.filter(result=Build.RESULT_FAIL)
 
 
 class Task(models.Model):

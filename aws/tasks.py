@@ -91,7 +91,7 @@ def create_tasks(gh_repo, build):
 
 
 def on_check_build_failure(self, exc, task_id, args, kwargs, einfo):
-    build = Build.objects.get(pk=build_pk)
+    build = Build.objects.get(pk=args[0])
     build.status = Build.STATUS_ERROR
     build.error = str(exc)
     build.save()
