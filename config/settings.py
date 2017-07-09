@@ -169,13 +169,18 @@ CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 # Media file storage
 ######################################################################
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-AWS_STORAGE_BUCKET_NAME = 'beekeeper'
 
 ######################################################################
-# Build worker configuration
+# Beekeeper configuration
 ######################################################################
-BUILD_APP = 'aws'
-BUILD_NAMESPACE = 'beekeeper'
+BEEKEEPER_NAMESPACE = os.environ.get('BEEKEEPER_NAMESPACE', 'beekeeper')
+BEEKEEPER_URL = os.environ.get('BEEKEEPER_URL')
+BEEKEEPER_BUILD_APP = os.environ.get('BEEKEEPER_BUILD_APP', 'aws')
+
+######################################################################
+# AWS configuration
+######################################################################
+AWS_STORAGE_BUCKET_NAME = 'beekeeper'
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')

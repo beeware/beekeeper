@@ -15,8 +15,8 @@ def result(value):
         return mark_safe('<i class="fa fa-2x fa-question-circle-o pending" aria-hidden="true"></i>')
     elif value == Build.RESULT_FAIL:
         return mark_safe('<i class="fa fa-2x fa-exclamation-circle fail" aria-hidden="true"></i>')
-    elif value == Build.RESULT_QUALIFIED_PASS:
-        return mark_safe('<i class="fa fa-2x fa-check-circle-o qualified-pass" aria-hidden="true"></i>')
+    elif value == Build.RESULT_NON_CRITICAL_FAIL:
+        return mark_safe('<i class="fa fa-2x fa-check-circle-o fail non-critical" aria-hidden="true"></i>')
     elif value == Build.RESULT_PASS:
         return mark_safe('<i class="fa fa-2x fa-check-circle pass" aria-hidden="true"></i>')
     else:

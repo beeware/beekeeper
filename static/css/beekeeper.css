@@ -133,7 +133,7 @@ div.container {
   color: #d9534f;
 }
 
-.qualified-pass, .warning {
+.warning, .fail.non-critical {
   color: #f0ad4e;
 }
 

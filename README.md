@@ -12,6 +12,7 @@ To deploy a new BeeKeeper instance, clone this repo, and then run::
     $ git push heroku master
     $ heroku addons:create heroku-postgresql:hobby-dev
     $ heroku addons:create heroku-redis:hobby-dev
+    $ heroku config:set BEEKEEPER_URL=https://<your domain>
     $ heroku scale worker=1
     $ heroku run ./manage.py migrate
     $ heroku run ./manage.py createsuperuser

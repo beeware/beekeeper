@@ -212,12 +212,12 @@ class Build(models.Model):
 
     RESULT_PENDING = 0
     RESULT_FAIL = 10
-    RESULT_QUALIFIED_PASS = 19
+    RESULT_NON_CRITICAL_FAIL = 19
     RESULT_PASS = 20
     RESULT_CHOICES = [
         (RESULT_PENDING, 'Pending'),
         (RESULT_FAIL, 'Fail'),
-        (RESULT_QUALIFIED_PASS, 'Qualified pass'),
+        (RESULT_NON_CRITICAL_FAIL, 'Non-critical Fail'),
         (RESULT_PASS, 'Pass'),
     ]
     objects = BuildQuerySet.as_manager()

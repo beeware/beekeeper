@@ -1,5 +1,7 @@
 import uuid
 
+from github3.exceptions import GitHubError
+
 from django.conf import settings
 from django.contrib.postgres import fields as postgres
 from django.db import models
@@ -19,7 +21,6 @@ class TaskQuerySet(models.QuerySet):
 
     def not_finished(self):
         return self.filter(status__in=(
-                    Task.STATUS_CREATED,
                     Task.STATUS_PENDING,
                     Task.STATUS_RUNNING,
                     Task.STATUS_STOPPING,
@@ -73,6 +74,7 @@ class Task(models.Model):
     slug = models.CharField(max_length=100, db_index=True)
 
     phase = models.IntegerField()
+    is_critical = models.BooleanField()
     started = models.DateTimeField(null=True, blank=True)
     updated = models.DateTimeField(auto_now=True)
     completed = models.DateTimeField(null=True, blank=True)
@@ -130,7 +132,10 @@ class Task(models.Model):
 
     def start(self, ecs_client):
         environment = {
-            # ...
+            'GITHUB_OWNER': self.build.commit.repository.owner.login,
+            'GITHUB_PROJECT': self.build.commit.repository.name,
+            'SHA': self.build.commit.sha,
+            'TASK': self.slug.split(':')[-1]
         }
         environment.update(self.environment)
 
@@ -164,3 +169,30 @@ class Task(models.Model):
         )
         self.status = Task.STATUS_STOPPING
         self.save()
+
+    def report(self, gh_repo):
+        """Report the status of this task to GitHub
+
+        gh_repo: An active GitHub API session.
+        """
+        gh_commit = gh_repo.commit(self.build.commit.sha)
+        url = gh_commit._api.replace('commits', 'statuses')
+        payload = {
+            'context': '%s/%s' % (settings.BEEKEEPER_NAMESPACE, self.slug),
+            'state': {
+                Build.RESULT_PENDING: 'pending',
+                Build.RESULT_FAIL: 'failure',
+                Build.RESULT_NON_CRITICAL_FAIL: 'success',
+                Build.RESULT_PASS: 'success',
+            }[self.result],
+            'target_url': settings.BEEKEEPER_URL + self.get_absolute_url(),
+            'description': {
+                Build.RESULT_PENDING: '%s pending...' % self.name,
+                Build.RESULT_FAIL: '%s failed! Click for details.' % self.name,
+                Build.RESULT_NON_CRITICAL_FAIL: '%s: non-critical problem found. Click for details.' % self.name,
+                Build.RESULT_PASS: '%s passed.' % self.name,
+            }[self.result],
+        }
+        response = gh_commit._post(url, payload)
+        if not response.ok:
+            raise GitHubError(response.reason)

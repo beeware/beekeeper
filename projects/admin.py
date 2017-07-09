@@ -72,6 +72,7 @@ restart_build.short_description = "Restart build"
 def resume_build(modeladmin, request, queryset):
     for obj in queryset:
         obj.status = Build.STATUS_RUNNING
+        obj.result = Build.RESULT_PENDING
         obj.error = ''
         obj.save()
         obj.start()
@@ -80,7 +81,7 @@ resume_build.short_description = "Resume build"
 
 
 class TaskInline(admin.TabularInline):
-    model = apps.get_model(settings.BUILD_APP, 'Task')
+    model = apps.get_model(settings.BEEKEEPER_BUILD_APP, 'Task')
     fields = ['name', 'phase', 'status', 'result']
     extra = 0
 

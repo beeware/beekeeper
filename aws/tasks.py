@@ -43,8 +43,9 @@ def task_configs(config):
 
                         task_data.append({
                             'name': full_name,
-                            'slug': task_name,
+                            'slug': "%s:%s" % (phase_name, task_name),
                             'phase': phase,
+                            'is_critical': task_config.get('critical', True),
                             'environment': task_env,
                             'descriptor': descriptor,
                         })
@@ -54,6 +55,7 @@ def task_configs(config):
                     'name': phase_config.get('name', phase_name),
                     'slug': phase_name,
                     'phase': phase,
+                    'is_critical': phase_config.get('critical', True),
                     'environment': phase_config.get('environment', {}),
                     'descriptor': phase_config['task'],
                 })
@@ -64,16 +66,9 @@ def task_configs(config):
     return task_data
 
 
-def create_tasks(build):
+def create_tasks(gh_repo, build):
     # Download the config file from Github.
-    repository = GitHub(
-            settings.GITHUB_USERNAME,
-            password=settings.GITHUB_ACCESS_TOKEN
-        ).repository(
-            build.change.project.repository.owner.login,
-            build.change.project.repository.name
-        )
-    content = repository.contents('beekeeper.yml', ref=build.commit.sha)
+    content = gh_repo.contents('beekeeper.yml', ref=build.commit.sha)
     if content is None:
         raise ValueError("Repository doesn't contain BeeKeeper config file.")
 
@@ -87,10 +82,11 @@ def create_tasks(build):
     # Parse the phase configuration and create tasks
     for task_config in task_configs(phases):
         print("Created phase %(phase)s task %(name)s" % task_config)
-        Task.objects.create(
+        task = Task.objects.create(
             build=build,
             **task_config
         )
+        task.report(gh_repo)
 
 
 @app.task(bind=True)
@@ -104,6 +100,15 @@ def check_build(self, build_pk):
     )
     ecs_client = aws_session.client('ecs')
 
+    gh_session = GitHub(
+            settings.GITHUB_USERNAME,
+            password=settings.GITHUB_ACCESS_TOKEN
+        )
+    gh_repo = gh_session.repository(
+            build.change.project.repository.owner.login,
+            build.change.project.repository.name
+        )
+
     if build.status == Build.STATUS_CREATED:
         print("Starting build %s..." % build)
         # Record that the build has started.
@@ -113,7 +118,7 @@ def check_build(self, build_pk):
         # Retrieve task definition
         try:
             print("Creating task definitions...")
-            create_tasks(build)
+            create_tasks(gh_repo, build)
 
             # Start the tasks with no prerequisites
             print("Starting initial tasks...")
@@ -132,7 +137,7 @@ def check_build(self, build_pk):
 
     elif build.status == Build.STATUS_RUNNING:
         print("Checking status of build %s..." % build)
-        # Check all currently running tasks
+        # Update the status of all currently running tasks
         started_tasks = build.tasks.started()
         if started_tasks:
             print("There are %s active tasks." % started_tasks.count())
@@ -151,42 +156,81 @@ def check_build(self, build_pk):
                     task.status = Task.STATUS_RUNNING
                 elif task_response['lastStatus'] == 'STOPPED':
                     task.status = Task.STATUS_DONE
+
+                    # Determine the status of the task
+                    failed_containers = [
+                        container['name']
+                        for container in task_response['containers']
+                        if container['exitCode'] != 0
+                    ]
+                    if failed_containers:
+                        if task.is_critical:
+                            task.result = Build.RESULT_FAIL
+                        else:
+                            task.result = Build.RESULT_NON_CRITICAL_FAIL
+                    else:
+                        task.result = Build.RESULT_PASS
+
+                    # Report the status to Github.
+                    task.report(gh_repo)
+
+                    # Record the completion time.
                     task.completed = timezone.now()
                 elif task_response['lastStatus'] == 'FAILED':
                     task.status = Task.STATUS_ERROR
+                else:
+                    raise ValueError('Unknown task status %s' % task_response['lastStatus'])
                 task.save()
 
-        try:
-            completed_phase = max(build.tasks.done().values_list('phase', flat=True))
-
-            # Check for any tasks that are no longer blocked on prerequisites
-            new_tasks = build.tasks.filter(
-                            status=Task.STATUS_CREATED,
-                            phase=completed_phase + 1
-                        )
-        except ValueError:
-            new_tasks = []
-
-        if new_tasks:
-            print("Starting new tasks...")
-            for task in new_tasks:
-                print("Starting task %s..." % task.name)
-                task.start(ecs_client)
-        elif build.tasks.not_finished().exists():
-            print("Still waiting on tasks to complete.")
+        # If there are still tasks running, wait for them to finish.
+        running_tasks = build.tasks.not_finished()
+        if running_tasks.exists():
+            running_phase = max(running_tasks.values_list('phase', flat=True))
+            print("Still waiting for tasks in phase %s to complete." % running_phase)
         else:
-            print("No more tasks pending.")
-            if build.tasks.error().exists():
+            # There are no unfinished tasks.
+            # If there have been any failures or task errors, stop right now.
+            # Otherwise, queue up tasks for the next phase.
+            completed_tasks = build.tasks.done()
+            completed_phase = max(completed_tasks.values_list('phase', flat=True))
+
+            if completed_tasks.error().exists():
+                print("Errors encountered during phase %s" % completed_phase)
+                new_tasks = None
                 build.status = Build.STATUS_ERROR
                 build.result = Build.RESULT_FAILED
                 build.error = "%s tasks generated errors" % build.tasks.error().count()
-            else:
+            elif complete_tasks.failed().exists():
+                print("Failures encountered during phase %s" % completed_phase)
+                new_tasks = None
                 build.status = Build.STATUS_DONE
-                build.result = min(t.result for t in build.tasks.all())
+                build.result = Build.RESULT_FAILED
+            else:
+                new_tasks = build.tasks.filter(
+                                status=Task.STATUS_CREATED,
+                                phase=completed_phase + 1
+                            )
 
-            build.save()
-            print("Build status %s" % build.get_status_display())
-            print("Build result %s" % build.get_result_display())
+            if new_tasks:
+                print("Starting new tasks...")
+                for task in new_tasks:
+                    print("Starting task %s..." % task.name)
+                    task.start(ecs_client)
+            elif new_tasks is None:
+                print("Build aborted.")
+                build.save()
+            else:
+                print("No new tasks required.")
+                build.status = Build.STATUS_DONE
+                build.result = min(
+                    t.result
+                    for t in build.tasks.all()
+                    if t.result != Build.RESULT_PENDING
+                )
+
+                build.save()
+                print("Build status %s" % build.get_status_display())
+                print("Build result %s" % build.get_result_display())
 
     elif build.status == Build.STATUS_STOPPING:
         print("Stopping build %s..." % build)
