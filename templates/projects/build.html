@@ -8,7 +8,7 @@
         <li class="breadcrumb-item"><a href="{{ change.get_absolute_url }}"><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.title }}</a></li>
 
     </ol>
-    <h1>Build {{ build.display_pk }}
+    <h1>Build {{ build.commit.display_sha }}
         <a href="{{ change.html_url }}"><i class="fa fa-github exit float-right" aria-hidden="true"></i></a>
         <i id='spinner' class="fa fa-spinner fa-spin fa-fw float-right hidden"></i>
         <i id='error' class="fa fa-exclamation-triangle float-right hidden"></i>

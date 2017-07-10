@@ -6,9 +6,10 @@
         <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
         <li class="breadcrumb-item"><a href="{{ project.get_absolute_url }}"><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.name }}</a></li>
         <li class="breadcrumb-item"><a href="{{ change.get_absolute_url }}"><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.title }}</a></li>
-        <li class="breadcrumb-item"><a href="{{ build.get_absolute_url }}">Build {{ build.display_pk }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ build.get_absolute_url }}">Build {{ build.commit.display_sha }}</a></li>
     </ol>
-    <h1>Build {{ build.display_pk }}: {{ task.name }}
+
+    <h1>Build {{ build.commit.display_sha }}: {{ task.name }}
         <a href="{{ build.change.html_url }}"><i class="fa fa-github exit float-right" aria-hidden="true"></i></a>
         <i id='spinner' class="fa fa-spinner fa-spin fa-fw float-right hidden"></i>
         <i id='error' class="fa fa-exclamation-triangle float-right hidden"></i>

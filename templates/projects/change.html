@@ -24,7 +24,7 @@
         <tbody id="builds">
     {% for build in change.builds.all %}
             <tr scope="row">
-                <td><a href="{{ build.get_absolute_url }}">{{ build.display_pk }}</a></td>
+                <td><a href="{{ build.get_absolute_url }}">{{ build.commit.display_sha }}</a></td>
                 <td id="{{ build.display_pk }}-status" class="result">{{ build.get_status_display }}</td>
                 <td id="{{ build.display_pk }}-result" class="result">{% result build.result %}</td>
             </tr>
