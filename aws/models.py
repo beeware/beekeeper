@@ -136,7 +136,7 @@ class Task(models.Model):
     def start(self, ecs_client):
         environment = {
             'GITHUB_OWNER': self.build.commit.repository.owner.login,
-            'GITHUB_PROJECT': self.build.commit.repository.name,
+            'GITHUB_PROJECT_NAME': self.build.commit.repository.name,
             'GITHUB_USERNAME': settings.GITHUB_USERNAME,
             'GITHUB_ACCESS_TOKEN': settings.GITHUB_ACCESS_TOKEN,
             'GITHUB_PR_NUMBER': self.build.change.pull_request.number if self.build.change.is_pull_request else None,
