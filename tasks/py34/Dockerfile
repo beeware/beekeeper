@@ -7,5 +7,9 @@ WORKDIR /app
 # Copy the runtest script into the container
 ADD . /app
 
+# Get some core tools
+RUN apt-get update
+RUN apt-get install -yy curl unzip
+
 # Run the test with a waggle report
-CMD ["./runtests.sh"]
+CMD ["./run.sh"]

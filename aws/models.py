@@ -137,6 +137,9 @@ class Task(models.Model):
         environment = {
             'GITHUB_OWNER': self.build.commit.repository.owner.login,
             'GITHUB_PROJECT': self.build.commit.repository.name,
+            'GITHUB_USERNAME': settings.GITHUB_USERNAME,
+            'GITHUB_ACCESS_TOKEN': settings.GITHUB_ACCESS_TOKEN,
+            'GITHUB_PR_NUMBER': self.build.change.pull_request.number if self.build.change.is_pull_request else None,
             'SHA': self.build.commit.sha,
             'TASK': self.slug.split(':')[-1]
         }

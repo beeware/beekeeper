@@ -89,7 +89,6 @@ def create_tasks(gh_repo, build):
         task.report(gh_repo)
 
 
-
 def on_check_build_failure(self, exc, task_id, args, kwargs, einfo):
     build = Build.objects.get(pk=args[0])
     build.status = Build.STATUS_ERROR
@@ -189,7 +188,7 @@ def check_build(self, build_pk):
                     task.completed = timezone.now()
                 elif task_response['lastStatus'] == 'FAILED':
                     task.status = Task.STATUS_ERROR
-                else:
+                elif task_response['lastStatus'] != 'PENDING':
                     raise ValueError('Unknown task status %s' % task_response['lastStatus'])
                 task.save()
 

@@ -160,6 +160,14 @@ class Change(models.Model):
     def is_complete(self):
         return self.status in (Change.STATUS_ATTIC, Change.STATUS_IGNORED)
 
+    @property
+    def is_pull_request(self):
+        return self.change_type == Change.CHANGE_TYPE_PULL_REQUEST
+
+    @property
+    def is_push(self):
+        return self.change_type == Change.CHANGE_TYPE_PUSH
+
     def approve(self):
         self.status = Change.STATUS_ACTIVE
         self.save()
