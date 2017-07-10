@@ -72,6 +72,14 @@ def build(request, owner, repo_name, change_pk, build_pk):
     except Build.DoesNotExist:
         raise Http404
 
+    if request.method == "POST" and request.user.is_superuser:
+        if 'rebuild' in request.POST:
+            build.rebuild()
+        elif 'restart' in request.POST:
+            build.restart()
+
+        return redirect(build.get_absolute_url())
+
     return render(request, 'projects/build.html', {
             'project': build.change.project,
             'change': build.change,

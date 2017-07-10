@@ -281,8 +281,28 @@ class Build(models.Model):
             Build.STATUS_STOPPED
         )
 
+    @property
+    def is_error(self):
+        return self.status == Build.STATUS_ERROR
+
     def start(self):
         start_build.send(sender=Build, build=self)
+
+    def restart(self):
+        if self.is_finished:
+            obj.tasks.all().delete()
+            obj.status = Build.STATUS_CREATED
+            obj.error = ''
+            obj.save()
+            obj.start()
+
+    def resume(self):
+        if self.is_error:
+            obj.status = Build.STATUS_RUNNING
+            obj.result = Build.RESULT_PENDING
+            obj.error = ''
+            obj.save()
+            obj.start()
 
     def stop(self):
         # If the build has not been started yet, mark it as stopped. If the

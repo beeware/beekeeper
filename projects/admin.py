@@ -60,22 +60,14 @@ class ChangeAdmin(admin.ModelAdmin):
 
 def restart_build(modeladmin, request, queryset):
     for obj in queryset:
-        obj.tasks.all().delete()
-        obj.status = Build.STATUS_CREATED
-        obj.error = ''
-        obj.save()
-        obj.start()
+        obj.restart()
         messages.info(request, 'Restarting build %s' % obj)
 restart_build.short_description = "Restart build"
 
 
 def resume_build(modeladmin, request, queryset):
     for obj in queryset:
-        obj.status = Build.STATUS_RUNNING
-        obj.result = Build.RESULT_PENDING
-        obj.error = ''
-        obj.save()
-        obj.start()
+        obj.resume()
         messages.info(request, 'Resuming build %s' % obj)
 resume_build.short_description = "Resume build"
 

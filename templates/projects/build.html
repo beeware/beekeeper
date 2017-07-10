@@ -8,11 +8,17 @@
         <li class="breadcrumb-item"><a href="{{ change.get_absolute_url }}"><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.title }}</a></li>
 
     </ol>
+    <form method="POST">{% csrf_token %}
     <h1>Build {{ build.commit.display_sha }}
         <a href="{{ change.html_url }}"><i class="fa fa-github exit float-right" aria-hidden="true"></i></a>
         <i id='spinner' class="fa fa-spinner fa-spin fa-fw float-right hidden"></i>
         <i id='error' class="fa fa-exclamation-triangle float-right hidden"></i>
+        {% if user.is_superuser %}
+        <input id="rebuild" type="submit" class="btn btn-success float-right control{% if not build.is_finished %} hidden{% endif %}" value="Rebuild" name="rebuild">
+        <input id="resume" type="submit" class="btn btn-success float-right control{% if not build.is_error %} hidden{% endif %}" value="Resume" name="resume">
+        {% endif %}
     </h1>
+    </form>
 
     <dl>
         <dt>Status</dt>
@@ -110,7 +116,9 @@ function refresh() {
                         }
                     }
 
-                    if (!response['finished']) {
+                    if (response['finished']) {
+                        document.getElementById('rebuild').style.display = 'block';
+                    } else {
                         window.setTimeout(refresh, 10000);
                     }
                 } else {
@@ -123,6 +131,9 @@ function refresh() {
             document.getElementById('error').style.display = 'inline'
             console.log('Error: ' + e)
             window.setTimeout(refresh, 30000)
+
+            document.getElementById('rebuild').style.display = 'block';
+            document.getElementById('resume').style.display = 'block';
         }
     }
     xmlhttp.send();
