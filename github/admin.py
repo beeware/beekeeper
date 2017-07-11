@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from .models import User, Repository, Commit, PullRequest, PullRequestUpdate, Push
+from .models import User, Repository, Branch, Commit, PullRequest, PullRequestUpdate, Push
 
 
 @admin.register(User)
@@ -17,10 +17,17 @@ class UserAdmin(admin.ModelAdmin):
     user_with_avatar.short_description = 'User'
 
 
+class BranchInline(admin.TabularInline):
+    model = Branch
+    fields = ['name', 'active']
+    extra = 0
+
+
 @admin.register(Repository)
 class RepositoryAdmin(admin.ModelAdmin):
     list_display = ['user_with_avatar', 'name', 'description']
     raw_id_fields = ['owner',]
+    inlines = [BranchInline]
 
     def user_with_avatar(self, repo):
         return mark_safe('<img src="%s" style="width: 32px" alt="Github avatar for %s"> %s' % (

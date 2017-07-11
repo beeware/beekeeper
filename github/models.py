@@ -40,6 +40,8 @@ class Repository(models.Model):
     html_url = models.URLField()
     description = models.CharField(max_length=500)
 
+    master_branch_name = models.CharField(max_length=100, default="master")
+
     class Meta:
         verbose_name_plural = 'repositories'
         ordering = ('name',)
@@ -47,14 +49,39 @@ class Repository(models.Model):
     def __str__(self):
         return "github:%s" % self.full_name
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # Create a master branch if there are no branches.
+        if not self.branches.exists():
+            self.branches.create(name='master')
+
     @property
     def full_name(self):
         return '%s/%s' % (self.owner.login, self.name)
 
+    @property
+    def active_branch_names(self):
+        return set(self.branches.filter(active=True).values_list('name', flat=True))
+
+
+class Branch(models.Model):
+    repository = models.ForeignKey(Repository, related_name='branches')
+    name = models.CharField(max_length=100)
+
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name_plural = 'branches'
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
+
 
 class Commit(models.Model):
     repository = models.ForeignKey(Repository, related_name='commits')
-    branch = models.CharField(max_length=100, db_index=True)
+    branch_name = models.CharField(max_length=100, db_index=True)
     sha = models.CharField(max_length=40, db_index=True)
     user = models.ForeignKey(User, related_name='commits')
 
@@ -115,7 +142,7 @@ class PullRequest(models.Model):
     state = models.IntegerField(choices=STATE_CHOICES, default=STATE_OPEN)
 
     class Meta:
-        ordering = ('number',)
+        ordering = ('repository__name', 'number',)
 
     def __str__(self):
         return "PR %s on %s" % (self.number, self.repository)
@@ -147,5 +174,5 @@ class Push(models.Model):
 
     def __str__(self):
         return "Push %s to branch %s on %s" % (
-            self.commit.sha, self.commit.branch, self.commit.repository
+            self.commit.sha, self.commit.branch_name, self.commit.repository
         )

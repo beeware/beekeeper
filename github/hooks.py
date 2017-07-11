@@ -59,30 +59,34 @@ def push_handler(payload):
     # Make sure we have a record for the repository
     repo = get_or_create_repository(payload['repository'])
 
-    # Make sure we have a record for the commit
-    commit_data = payload['head_commit']
-    try:
-        commit = Commit.objects.get(sha=commit_data['id'])
-    except Commit.DoesNotExist:
-        commit = Commit(sha=commit_data['id'])
+    branch_name = payload['ref'][11:]
+    if branch_name in repo.active_branch_names:
+        # If this push is on the master branch,
+        # make sure we have a record for the commit
+        commit_data = payload['head_commit']
 
-    commit.repository = repo
-    commit.user = user
-    commit.branch = payload['ref'][11:]
-    commit.message = commit_data['message']
-    commit.url = commit_data['url']
-    commit.created = datetime_parser.parse(commit_data['timestamp'])
-    commit.save()
+        try:
+            commit = Commit.objects.get(sha=commit_data['id'])
+        except Commit.DoesNotExist:
+            commit = Commit(sha=commit_data['id'])
 
-    # And create a push record.
-    try:
-        push = Push.objects.get(commit=commit)
-    except Push.DoesNotExist:
-        push = Push(commit=commit)
-    push.created = datetime_parser.parse(commit_data['timestamp'])
-    push.save()
+        commit.repository = repo
+        commit.user = user
+        commit.branch_name = branch_name
+        commit.message = commit_data['message']
+        commit.url = commit_data['url']
+        commit.created = datetime_parser.parse(commit_data['timestamp'])
+        commit.save()
 
-    new_build.send(sender=Push, push=push)
+        # And create a push record.
+        try:
+            push = Push.objects.get(commit=commit)
+        except Push.DoesNotExist:
+            push = Push(commit=commit)
+        push.created = datetime_parser.parse(commit_data['timestamp'])
+        push.save()
+
+        new_build.send(sender=Push, push=push)
 
     return 'OK'
 
@@ -107,7 +111,7 @@ def pull_request_handler(payload):
             repository=repo,
             sha=commit_sha,
             user=submitter,
-            branch=payload['pull_request']['head']['ref'],
+            branch_name=payload['pull_request']['head']['ref'],
             created=datetime_parser.parse(payload['pull_request']['updated_at']),
             url='https://github.com/%s/%s/commit/%s' % (
                 repo.owner.login,

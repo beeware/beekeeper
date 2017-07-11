@@ -52,7 +52,7 @@ class PullRequestHookTests(TestCase):
 
         commit = Commit.objects.get(sha='936ce824549a2a794df739c1ffab91f5644d812b')
         self.assertEqual(commit.user.login, 'freakboy3742')
-        self.assertEqual(commit.branch, 'prtest')
+        self.assertEqual(commit.branch_name, 'prtest')
         self.assertEqual(commit.url, 'https://github.com/pybee/webhook-trigger/commit/936ce824549a2a794df739c1ffab91f5644d812b')
         self.assertEqual(commit.created, datetime(2017, 6, 25, 0, 45, 7, tzinfo=UTC))
 
@@ -185,7 +185,7 @@ class PullRequestHookTests(TestCase):
         commit = Commit.objects.create(
             repository=repo,
             user=owner,
-            branch='prtest',
+            branch_name='prtest',
             sha='739c1ffab91f5644d81936ce824549a2a794df2b',
             created=self.now,
             url='https://github.com/pybee/webhook-trigger/commit/9c1ffab91f5644d812b936ce824549a2a794df73'
@@ -233,7 +233,7 @@ class PushHookTests(TestCase):
     def assert_postconditions(self):
         commit = Commit.objects.get(sha='02bc552855735a0a4f74bfe2d8d2011bc003460c')
         self.assertEqual(commit.user.login, 'freakboy3742')
-        self.assertEqual(commit.branch, 'master')
+        self.assertEqual(commit.branch_name, 'master')
         self.assertEqual(commit.message, 'Merge pull request #2 from freakboy3742/closed_pr\n\nAdded content that can be merged.')
         self.assertEqual(commit.url, 'https://github.com/pybee/webhook-trigger/commit/02bc552855735a0a4f74bfe2d8d2011bc003460c')
         self.assertEqual(commit.created, datetime(2017, 6, 25, 8, 21, 28, tzinfo=UTC))
