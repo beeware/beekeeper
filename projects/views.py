@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.http import Http404, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from .models import Project, Change, Build
 
