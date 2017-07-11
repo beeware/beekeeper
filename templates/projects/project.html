@@ -16,6 +16,8 @@
                 <th>#</th>
                 <th>Author</th>
                 <th>Description</th>
+                <th>Created</th>
+                <th>Updated</th>
             </tr>
         </thead>
         <tbody>
@@ -24,6 +26,8 @@
             <td class="minimal"><a href="{{ change.get_absolute_url }}">{{ change.title }}</a></td>
             <td><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.user }}</td>
             <td>{{ change.description }}</td>
+            <td>{{ change.created|date:"j M Y, H:i" }}</td>
+            <td>{{ change.updated|date:"j M Y, H:i" }}</td>
         </tr>
     {% endfor %}
         </tbody>

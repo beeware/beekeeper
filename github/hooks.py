@@ -107,10 +107,24 @@ def pull_request_handler(payload):
     try:
         commit = Commit.objects.get(sha=commit_sha)
     except Commit.DoesNotExist:
+        # For some reason, Github doesn't expose the commit
+        # message in the pull request payload.
+        from github3 import GitHub
+        gh_session = GitHub(
+                settings.GITHUB_USERNAME,
+                password=settings.GITHUB_ACCESS_TOKEN
+            )
+        gh_repo = gh_session.repository(
+                repository.owner.login,
+                repository.name
+            )
+        gh_commit = gh_repo.commit(commit_sha)
+
         commit = Commit.objects.create(
             repository=repo,
             sha=commit_sha,
             user=submitter,
+            message=gh_commit.commit.message,
             branch_name=payload['pull_request']['head']['ref'],
             created=datetime_parser.parse(payload['pull_request']['updated_at']),
             url='https://github.com/%s/%s/commit/%s' % (

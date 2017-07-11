@@ -17,6 +17,8 @@
         <thead class="thead-default">
             <tr>
                 <th>Build</th>
+                <th>Timestamp</th>
+                <th>Commit message</th>
                 <th class="result">Status</th>
                 <th class="result">Result</th>
             </tr>
@@ -25,6 +27,8 @@
     {% for build in change.builds.all %}
             <tr scope="row">
                 <td><a href="{{ build.get_absolute_url }}">{{ build.commit.display_sha }}</a></td>
+                <td>{{ build.commit.created|date:"j M Y, H:i" }}</td>
+                <td>{{ build.commit.title }}</td>
                 <td id="{{ build.display_pk }}-status" class="result">{{ build.get_status_display }}</td>
                 <td id="{{ build.display_pk }}-result" class="result">{% result build.result %}</td>
             </tr>
@@ -85,6 +89,14 @@ function refresh() {
                             link.href = response['builds'][slug]['url']
                             link.textContent = response['builds'][slug]['label']
                             col.appendChild(link)
+                            row.appendChild(col)
+
+                            col = document.createElement('td')
+                            col.textContent = response['builds'][slug]['timestamp']
+                            row.appendChild(col)
+
+                            col = document.createElement('td')
+                            col.textContent = response['builds'][slug]['title']
                             row.appendChild(col)
 
                             col = document.createElement('td')

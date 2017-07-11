@@ -88,7 +88,9 @@ def change_status(request, owner, repo_name, change_pk):
             'builds': {
                 build.display_pk: {
                         'url': build.get_absolute_url(),
-                        'label': build.display_pk,
+                        'label': build.commit.display_sha,
+                        'title': build.commit.title,
+                        'timestamp': build.created.strftime('%-d %b %Y, %H:%M'),
                         'status': build.get_status_display(),
                         'result': build.result,
                     }

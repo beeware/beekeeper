@@ -21,6 +21,12 @@
     </form>
 
     <dl>
+        <dt>Created</dt>
+        <dd>{{ build.created|date:"j M Y, H:i" }}</dd>
+
+        <dt>Commit message</dt>
+        <dd>{{ build.commit.message }}</dd>
+
         <dt>Status</dt>
         <dd id='status'>{{ build.get_status_display }}{% if build.error %}: {{ build.error }}{% endif %}</dd>
 
