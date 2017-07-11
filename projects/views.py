@@ -1,8 +1,12 @@
+import hashlib
 import json
 
 from django.conf import settings
 from django.http import Http404, HttpResponse
+from django.views.decorators.http import etag
 from django.shortcuts import render, redirect
+from django.views.decorators.cache import never_cache
+from django.utils import timezone
 
 from .models import Project, Change, Build
 
@@ -21,6 +25,12 @@ def project(request, owner, repo_name):
         })
 
 
+def etag_func(request, *args, **kwargs):
+    return hashlib.sha256(str(timezone.now()).encode('utf-8')).hexdigest()
+
+
+@never_cache
+@etag(etag_func=etag_func)
 def project_shield(request, owner, repo_name):
     try:
         project = Project.objects.get(
@@ -33,17 +43,19 @@ def project_shield(request, owner, repo_name):
     build = project.current_build
     if build:
         if build.result == Build.RESULT_PASS:
-            shield = 'passed-green'
+            status = 'pass'
         elif build.result == Build.RESULT_FAIL:
-            shield = 'failed-red'
+            status = 'fail'
         elif build.result == Build.RESULT_NON_CRITICAL_FAIL:
-            shield = 'non_critical_fail-olivegreen'
+            status = 'non_critical_fail'
         else:
-            shield = 'unknown-lightgrey'
+            status = 'unknown'
     else:
-        shield = 'unknown-lightgrey'
+        status = 'unknown'
 
-    return redirect('https://img.shields.io/badge/BeeKeeper-%s.svg' % shield)
+    return render(request, 'projects/shields/%s.svg' % status, {},
+        content_type='image/svg+xml;charset=utf-8'
+    )
 
 
 def change(request, owner, repo_name, change_pk):
