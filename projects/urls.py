@@ -8,6 +8,8 @@ from projects import views as projects
 urlpatterns = [
     url(r'^(?P<owner>[-\w]+)/(?P<repo_name>[-\w]+)$',
         projects.project, name='project'),
+    url(r'^(?P<owner>[-\w]+)/(?P<repo_name>[-\w]+)/shield$',
+        projects.project_shield, name='project-shield'),
     url(r'^(?P<owner>[-\w]+)/(?P<repo_name>[-\w]+)/change/(?P<change_pk>[-\da-fA-F]{8}-[-\da-fA-F]{4}-4[-\da-fA-F]{3}-[-\da-fA-F]{4}-[-\da-fA-F]{12})$',
         projects.change, name='change'),
     url(r'^(?P<owner>[-\w]+)/(?P<repo_name>[-\w]+)/change/(?P<change_pk>[-\da-fA-F]{8}-[-\da-fA-F]{4}-4[-\da-fA-F]{3}-[-\da-fA-F]{4}-[-\da-fA-F]{12})/status$',

@@ -56,6 +56,12 @@ class Project(models.Model):
                 'repo_name': self.repository.name,
             })
 
+    def get_shield_url(self):
+        return reverse('projects:project-shield', kwargs={
+                'owner': self.repository.owner.login,
+                'repo_name': self.repository.name,
+            })
+
     @property
     def current_commit(self):
         try:
@@ -66,6 +72,26 @@ class Project(models.Model):
     @property
     def builds(self):
         return Build.objects.filter(change__project=self)
+
+    @property
+    def pushes(self):
+        return Change.objects.filter(change_type=Change.CHANGE_TYPE_PUSH)
+
+    @property
+    def pull_requests(self):
+        return Change.objects.filter(change_type=Change.CHANGE_TYPE_PULL_REQUEST)
+
+    @property
+    def current_build(self):
+        try:
+            return self.pushes.latest(
+                                    'completed'
+                                ).builds.finished(
+                                ).filter(
+                                    commit__branch='master'
+                                ).latest('created')
+        except (Change.DoesNotExist, Build.DoesNotExist):
+            return None
 
     def approve(self):
         self.status = Project.STATUS_ACTIVE
@@ -197,6 +223,13 @@ class BuildQuerySet(models.QuerySet):
 
     def done(self):
         return self.filter(status=Build.STATUS_DONE)
+
+    def finished(self):
+        return self.filter(status__in=(
+                Build.STATUS_DONE,
+                Build.STATUS_ERROR,
+                Build.STATUS_STOPPED
+            ))
 
 
 class Build(models.Model):

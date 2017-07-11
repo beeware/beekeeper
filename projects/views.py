@@ -21,6 +21,31 @@ def project(request, owner, repo_name):
         })
 
 
+def project_shield(request, owner, repo_name):
+    try:
+        project = Project.objects.get(
+                        repository__owner__login=owner,
+                        repository__name=repo_name,
+                    )
+    except Project.DoesNotExist:
+        raise Http404
+
+    build = project.current_build
+    if build:
+        if build.result == Build.RESULT_PASS:
+            status = 'pass'
+        elif build.result == Build.RESULT_FAIL:
+            status = 'fail'
+        elif build.result == Build.RESULT_NON_CRITICAL_FAIL:
+            status = 'non_critical_fail'
+        else:
+            status = 'unknown'
+    else:
+        status = 'unknown'
+
+    return render(request, 'projects/shields/%s.svg' % status, {}, content_type='image/svg+xml')
+
+
 def change(request, owner, repo_name, change_pk):
     try:
         change = Change.objects.get(

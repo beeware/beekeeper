@@ -6,7 +6,8 @@
     </ol>
     <h1>
         <img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.name }}
-        <a href="{{ project.repository.html_url }}"><i class="fa fa-github exit float-right" aria-hidden="true"></i></a>
+        <a class="exit float-right" href="{{ project.repository.html_url }}"><i class="fa fa-github" aria-hidden="true"></i></a>
+        <img class="exit float-right" src="{{ project.get_shield_url }}">
     </h1>
 
     <table class="table table-hover">
