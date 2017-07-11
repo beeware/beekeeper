@@ -208,13 +208,13 @@ def check_build(self, build_pk):
                 print("Errors encountered during phase %s" % completed_phase)
                 new_tasks = None
                 build.status = Build.STATUS_ERROR
-                build.result = Build.RESULT_FAILED
+                build.result = Build.RESULT_FAIL
                 build.error = "%s tasks generated errors" % build.tasks.error().count()
             elif completed_tasks.failed().exists():
                 print("Failures encountered during phase %s" % completed_phase)
                 new_tasks = None
                 build.status = Build.STATUS_DONE
-                build.result = Build.RESULT_FAILED
+                build.result = Build.RESULT_FAIL
             else:
                 new_tasks = build.tasks.filter(
                                 status=Task.STATUS_CREATED,
