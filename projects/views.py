@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from django.http import Http404, HttpResponse
 from django.shortcuts import render, redirect
+from django.views.decorators.cache import never_cache
 
 from .models import Project, Change, Build
 
@@ -21,6 +22,7 @@ def project(request, owner, repo_name):
         })
 
 
+@never_cache
 def project_shield(request, owner, repo_name):
     try:
         project = Project.objects.get(
