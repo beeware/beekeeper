@@ -3,7 +3,6 @@ import json
 from django.conf import settings
 from django.http import Http404, HttpResponse
 from django.shortcuts import render, redirect
-from django.views.decorators.cache import never_cache
 
 from .models import Project, Change, Build
 
@@ -22,7 +21,6 @@ def project(request, owner, repo_name):
         })
 
 
-@never_cache
 def project_shield(request, owner, repo_name):
     try:
         project = Project.objects.get(
@@ -35,17 +33,17 @@ def project_shield(request, owner, repo_name):
     build = project.current_build
     if build:
         if build.result == Build.RESULT_PASS:
-            status = 'pass'
+            shield = 'passed-green'
         elif build.result == Build.RESULT_FAIL:
-            status = 'fail'
+            shield = 'failed-red'
         elif build.result == Build.RESULT_NON_CRITICAL_FAIL:
-            status = 'non_critical_fail'
+            shield = 'non_critical_fail-olivegreen'
         else:
-            status = 'unknown'
+            shield = 'unknown-lightgrey'
     else:
-        status = 'unknown'
+        shield = 'unknown-lightgrey'
 
-    return render(request, 'projects/shields/%s.svg' % status, {}, content_type='image/svg+xml')
+    return redirect('https://img.shields.io/badge/BeeKeeper-%s.svg' % shield)
 
 
 def change(request, owner, repo_name, change_pk):
