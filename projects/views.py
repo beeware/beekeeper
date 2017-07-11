@@ -73,8 +73,8 @@ def build(request, owner, repo_name, change_pk, build_pk):
         raise Http404
 
     if request.method == "POST" and request.user.is_superuser:
-        if 'rebuild' in request.POST:
-            build.rebuild()
+        if 'resume' in request.POST:
+            build.resume()
         elif 'restart' in request.POST:
             build.restart()
 

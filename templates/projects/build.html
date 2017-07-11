@@ -14,7 +14,7 @@
         <i id='spinner' class="fa fa-spinner fa-spin fa-fw float-right hidden"></i>
         <i id='error' class="fa fa-exclamation-triangle float-right hidden"></i>
         {% if user.is_superuser %}
-        <input id="rebuild" type="submit" class="btn btn-success float-right control{% if not build.is_finished %} hidden{% endif %}" value="Rebuild" name="rebuild">
+        <input id="restart" type="submit" class="btn btn-success float-right control{% if not build.is_finished %} hidden{% endif %}" value="Restart" name="restart">
         <input id="resume" type="submit" class="btn btn-success float-right control{% if not build.is_error %} hidden{% endif %}" value="Resume" name="resume">
         {% endif %}
     </h1>
@@ -117,7 +117,7 @@ function refresh() {
                     }
 
                     if (response['finished']) {
-                        document.getElementById('rebuild').style.display = 'block';
+                        document.getElementById('restart').style.display = 'block';
                     } else {
                         window.setTimeout(refresh, 10000);
                     }
@@ -132,7 +132,7 @@ function refresh() {
             console.log('Error: ' + e)
             window.setTimeout(refresh, 30000)
 
-            document.getElementById('rebuild').style.display = 'block';
+            document.getElementById('restart').style.display = 'block';
             document.getElementById('resume').style.display = 'block';
         }
     }
