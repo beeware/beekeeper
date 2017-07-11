@@ -290,19 +290,19 @@ class Build(models.Model):
 
     def restart(self):
         if self.is_finished:
-            obj.tasks.all().delete()
-            obj.status = Build.STATUS_CREATED
-            obj.error = ''
-            obj.save()
-            obj.start()
+            self.tasks.all().delete()
+            self.status = Build.STATUS_CREATED
+            self.error = ''
+            self.save()
+            self.start()
 
     def resume(self):
         if self.is_error:
-            obj.status = Build.STATUS_RUNNING
-            obj.result = Build.RESULT_PENDING
-            obj.error = ''
-            obj.save()
-            obj.start()
+            self.status = Build.STATUS_RUNNING
+            self.result = Build.RESULT_PENDING
+            self.error = ''
+            self.save()
+            self.start()
 
     def stop(self):
         # If the build has not been started yet, mark it as stopped. If the
