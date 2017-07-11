@@ -18,10 +18,11 @@ def new_push_build(sender, push=None, *args, **kwargs):
         project = Project.objects.get(repository=push.commit.repository)
         if project.status == Project.STATUS_ACTIVE:
 
-            # Stop all push builds on this project
-            for change in project.changes.filter(
-                                change_type=Change.CHANGE_TYPE_PUSH
-                            ).active():
+            # Stop all push builds on the same branch of this project
+            for change in project.pushes.active(
+                                ).filter(
+                                    push__commit__branch_name=push.commit.branch_name
+                                ):
                 change.complete()
 
             # Find (or create) a change relating to this pull.
