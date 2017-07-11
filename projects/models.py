@@ -84,12 +84,10 @@ class Project(models.Model):
     @property
     def current_build(self):
         try:
-            return self.pushes.filter(
-                                push__commit__branch_name=self.repository.master_branch_name
-                            ).latest(
-                                'completed'
-                            ).builds.finished(
-                            ).latest('created')
+            return Build.objects.filter(
+                    change__change_type=Change.CHANGE_TYPE_PUSH,
+                    commit__branch_name=self.repository.master_branch_name,
+                ).finished().latest('created')
         except (Change.DoesNotExist, Build.DoesNotExist):
             return None
 
