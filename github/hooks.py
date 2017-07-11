@@ -68,7 +68,7 @@ def push_handler(payload):
 
     commit.repository = repo
     commit.user = user
-    commit.branch = payload['ref'].rsplit('/', 1)[1]
+    commit.branch = payload['ref'][11:]
     commit.message = commit_data['message']
     commit.url = commit_data['url']
     commit.created = datetime_parser.parse(commit_data['timestamp'])

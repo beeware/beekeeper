@@ -26,6 +26,7 @@ class PullRequestHookTests(TestCase):
         # Postcondition - 2 users, 1 repo, 1 PR.
         self.assertEqual(GithubUser.objects.count(), 2 + extra_users)
         self.assertEqual(Repository.objects.count(), 1)
+        self.assertEqual(Push.objects.count(), 0)
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(PullRequestUpdate.objects.count(), 1 + extra_pull_request_updates)
         self.assertEqual(Commit.objects.count(), 1 + extra_commits)
@@ -241,23 +242,42 @@ class PushHookTests(TestCase):
         self.assertEqual(push.created, datetime(2017, 6, 25, 8, 21, 28, tzinfo=UTC))
 
     def test_standalone_commit(self):
+
+        self.assertEqual(GithubUser.objects.count(), 0)
+        self.assertEqual(Repository.objects.count(), 0)
+        self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(PullRequestUpdate.objects.count(), 0)
+        self.assertEqual(Push.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 0)
+
         # Handle the pull request
         push_handler(self.push_payload)
+
+        self.assert_postconditions()
 
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(PullRequestUpdate.objects.count(), 0)
+        self.assertEqual(Push.objects.count(), 1)
         self.assertEqual(Commit.objects.count(), 1)
 
-        self.assert_postconditions()
-
     def test_merge_commit(self):
+        self.assertEqual(GithubUser.objects.count(), 0)
+        self.assertEqual(Repository.objects.count(), 0)
+        self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(PullRequestUpdate.objects.count(), 0)
+        self.assertEqual(Push.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 0)
+
         # Handle the pull request
         pull_request_handler(self.pull_request_payload)
 
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(PullRequestUpdate.objects.count(), 1)
+        self.assertEqual(Push.objects.count(), 0)
         self.assertEqual(Commit.objects.count(), 1)
 
         push_handler(self.push_payload)
@@ -266,17 +286,28 @@ class PushHookTests(TestCase):
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(PullRequestUpdate.objects.count(), 1)
+        self.assertEqual(Push.objects.count(), 1)
         self.assertEqual(Commit.objects.count(), 2)
 
         self.assert_postconditions()
 
     def test_merge_commit_before_pr(self):
+        self.assertEqual(GithubUser.objects.count(), 0)
+        self.assertEqual(Repository.objects.count(), 0)
+        self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(PullRequestUpdate.objects.count(), 0)
+        self.assertEqual(Push.objects.count(), 0)
+        self.assertEqual(Commit.objects.count(), 0)
+
         # Handle the pull request
         push_handler(self.push_payload)
 
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 0)
+        self.assertEqual(PullRequestUpdate.objects.count(), 0)
+        self.assertEqual(Push.objects.count(), 1)
         self.assertEqual(Commit.objects.count(), 1)
 
         pull_request_handler(self.pull_request_payload)
@@ -285,6 +316,8 @@ class PushHookTests(TestCase):
         self.assertEqual(GithubUser.objects.count(), 2)
         self.assertEqual(Repository.objects.count(), 1)
         self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(PullRequestUpdate.objects.count(), 1)
+        self.assertEqual(Push.objects.count(), 1)
         self.assertEqual(Commit.objects.count(), 2)
 
         self.assert_postconditions()
