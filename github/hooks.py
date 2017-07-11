@@ -110,13 +110,14 @@ def pull_request_handler(payload):
         # For some reason, Github doesn't expose the commit
         # message in the pull request payload.
         from github3 import GitHub
+        from django.conf import settings
         gh_session = GitHub(
                 settings.GITHUB_USERNAME,
                 password=settings.GITHUB_ACCESS_TOKEN
             )
         gh_repo = gh_session.repository(
-                repository.owner.login,
-                repository.name
+                repo.owner.login,
+                repo.name
             )
         gh_commit = gh_repo.commit(commit_sha)
 
