@@ -37,17 +37,19 @@
     <table class="table table-hover">
         <thead class="thead-default">
             <tr>
+                <th class="minimal">Phase</th>
                 <th>Task</th>
-                <th class="result">Status</th>
-                <th class="result">Result</th>
+                <th class="minimal">Status</th>
+                <th class="minimal">Result</th>
             </tr>
         </thead>
         <tbody id="tasks">
         {% for task in build.tasks.all %}
             <tr scope="row">
+                <td class="minimal">{{ task.phase }}</td>
                 <td><a href="{{ task.get_absolute_url }}">{{ task.name }}</a></td>
-                <td class="result" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
-                <td class="result" id='{{ task.slug }}-result'>{% result task.result %}</td>
+                <td class="minimal" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
+                <td class="minimal" id='{{ task.slug }}-result'>{% result task.result %}</td>
             </tr>
         {% endfor %}
         </tbody>
@@ -126,6 +128,11 @@ function refresh() {
                             row.scope = "row"
 
                             col = document.createElement('td')
+                            col.className = 'minimal'
+                            col.textContent = response['tasks'][slug]['phase']
+                            row.appendChild(col)
+
+                            col = document.createElement('td')
                             link = document.createElement('a')
                             link.href = response['tasks'][slug]['url']
                             link.textContent = response['tasks'][slug]['name']
@@ -134,13 +141,13 @@ function refresh() {
 
                             col = document.createElement('td')
                             col.id = slug + '-status'
-                            col.className = 'result'
+                            col.className = 'minimal'
                             col.textContent = response['tasks'][slug]['status']
                             row.appendChild(col)
 
                             col = document.createElement('td')
                             col.id = slug + '-result'
-                            col.className = 'result'
+                            col.className = 'minimal'
                             switch (response['tasks'][slug]['result']) {
                                 case 0:
                                     col.innerHTML = '{% result 0 %}'

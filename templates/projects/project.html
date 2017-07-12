@@ -13,21 +13,21 @@
     <table class="table table-hover">
         <thead class="thead-default">
             <tr>
-                <th>#</th>
-                <th>Author</th>
+                <th class="minimal">#</th>
+                <th class="minimal">Author</th>
                 <th>Description</th>
-                <th>Created</th>
-                <th>Updated</th>
+                <th class="minimal">Created</th>
+                <th class="minimal">Updated</th>
             </tr>
         </thead>
         <tbody>
     {% for change in project.changes.active %}
         <tr scope="row">
             <td class="minimal"><a href="{{ change.get_absolute_url }}">{{ change.title }}</a></td>
-            <td><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.user }}</td>
+            <td class="minimal avatar"><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.user }}</td>
             <td>{{ change.description }}</td>
-            <td>{{ change.created|date:"j M Y, H:i" }}</td>
-            <td>{{ change.updated|date:"j M Y, H:i" }}</td>
+            <td class="minimal">{{ change.created|date:"j M Y, H:i" }}</td>
+            <td class="minimal">{{ change.updated|date:"j M Y, H:i" }}</td>
         </tr>
     {% endfor %}
         </tbody>

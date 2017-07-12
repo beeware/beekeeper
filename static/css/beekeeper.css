@@ -100,8 +100,15 @@ div.container {
  **************************************/
 
 .minimal {
-  width: 1em;
+  width: 0.1em;
+  text-align: center;
+  white-space: nowrap;
 }
+
+.avatar {
+  text-align: left;
+}
+
 
 /**************************************
  * Control buttons
