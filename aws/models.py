@@ -184,7 +184,7 @@ class Task(models.Model):
         gh_commit = gh_repo.commit(self.build.commit.sha)
         url = gh_commit._api.replace('commits', 'statuses')
         payload = {
-            'context': '%s/%s' % (settings.BEEKEEPER_NAMESPACE, self.slug),
+            'context': '%s:%s/%s' % (settings.BEEKEEPER_NAMESPACE, self.phase, self.slug),
             'state': {
                 Build.RESULT_PENDING: 'pending',
                 Build.RESULT_FAIL: 'failure',
