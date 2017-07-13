@@ -83,6 +83,7 @@ class Task(models.Model):
     completed = models.DateTimeField(null=True, blank=True)
 
     environment = postgres.JSONField()
+    overrides = postgres.JSONField()
     descriptor = models.CharField(max_length=100)
     arn = models.CharField(max_length=100, null=True, blank=True)
 
@@ -145,22 +146,23 @@ class Task(models.Model):
         }
         environment.update(self.environment)
 
+        container_definition = {
+            'name': self.descriptor,
+            'environment': [
+                {
+                    'name': str(key),
+                    'value': str(value)
+                }
+                for key, value in environment.items()
+            ],
+        }
+        container_definition.update(self.overrides)
+
         response = ecs_client.run_task(
             cluster=settings.AWS_ECS_CLUSTER_NAME,
             taskDefinition=self.descriptor,
             overrides={
-                'containerOverrides': [
-                    {
-                        'name': self.descriptor,
-                        'environment': [
-                            {
-                                'name': str(key),
-                                'value': str(value)
-                            }
-                            for key, value in environment.items()
-                        ],
-                    }
-                ]
+                'containerOverrides': [container_definition]
             }
         )
         self.arn = response['tasks'][0]['taskArn']
