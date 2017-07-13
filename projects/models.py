@@ -85,6 +85,7 @@ class Project(models.Model):
     def current_build(self):
         try:
             return Build.objects.filter(
+                    change__project=self,
                     change__change_type=Change.CHANGE_TYPE_PUSH,
                     commit__branch_name=self.repository.master_branch_name,
                 ).finished().latest('created')
