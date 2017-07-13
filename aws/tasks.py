@@ -96,6 +96,7 @@ def create_tasks(gh_repo, build):
 
 def on_check_build_failure(self, exc, task_id, args, kwargs, einfo):
     build = Build.objects.get(pk=args[0])
+    print("Error in build %s: %s" % (b, str(exc)))
     build.status = Build.STATUS_ERROR
     build.error = str(exc)
     build.save()
@@ -131,24 +132,18 @@ def check_build(self, build_pk):
         build.save()
 
         # Retrieve task definition
-        try:
-            print("Creating task definitions...")
-            create_tasks(gh_repo, build)
+        print("Creating task definitions...")
+        create_tasks(gh_repo, build)
 
-            # Start the tasks with no prerequisites
-            print("Starting initial tasks...")
-            initial_tasks = build.tasks.filter(status=Build.STATUS_CREATED, phase=0)
-            if initial_tasks:
-                for task in initial_tasks:
-                    print("Starting task %s..." % task.name)
-                    task.start(ecs_client)
-            else:
-                raise ValueError("No phase 0 tasks defined for build type '%s'" % build.change.change_type)
-        except Exception as e:
-            print("Error creating tasks: %s" % e)
-            build.status = Build.STATUS_ERROR
-            build.error = str(e)
-            build.save()
+        # Start the tasks with no prerequisites
+        print("Starting initial tasks...")
+        initial_tasks = build.tasks.filter(status=Build.STATUS_CREATED, phase=0)
+        if initial_tasks:
+            for task in initial_tasks:
+                print("Starting task %s..." % task.name)
+                task.start(ecs_client)
+        else:
+            raise ValueError("No phase 0 tasks defined for build type '%s'" % build.change.change_type)
 
     elif build.status == Build.STATUS_RUNNING:
         print("Checking status of build %s..." % build)
