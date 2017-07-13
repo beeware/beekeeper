@@ -165,10 +165,19 @@ class Task(models.Model):
                 'containerOverrides': [container_definition]
             }
         )
-        self.arn = response['tasks'][0]['taskArn']
-        self.status = Task.STATUS_PENDING
-        self.started = timezone.now()
-        self.save()
+        if response['tasks']:
+            self.arn = response['tasks'][0]['taskArn']
+            self.status = Task.STATUS_PENDING
+            self.started = timezone.now()
+            self.save()
+        else:
+            raise RuntimeError({
+                    'RESOURCE:CPU': 'Unable to start worker: '
+                        'Worker pool does not contain a machine with sufficient CPU resources.'
+                }.get(
+                    response['failures'][0]['reason'],
+                    'Unable to start worker: %s' % response['failures'][0]['reason']
+                ))
 
     def stop(self, ecs_client):
         response = ecs_client.stop_task(
