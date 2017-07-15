@@ -79,6 +79,7 @@ class Task(models.Model):
     phase = models.IntegerField()
     is_critical = models.BooleanField()
     started = models.DateTimeField(null=True, blank=True)
+    pending = models.DateTimeField(null=True, blank=True)
     updated = models.DateTimeField(auto_now=True)
     completed = models.DateTimeField(null=True, blank=True)
 
@@ -168,16 +169,16 @@ class Task(models.Model):
         if response['tasks']:
             self.arn = response['tasks'][0]['taskArn']
             self.status = Task.STATUS_PENDING
+            self.pending = timezone.now()
             self.started = timezone.now()
             self.save()
+        elif response['failures'][0]['reason'] in ['RESOURCE:CPU']:
+            if self.status == Task.STATUS_CREATED:
+                self.status = Task.STATUS_PENDING
+                self.pending = timezone.now()
+                self.save()
         else:
-            raise RuntimeError({
-                    'RESOURCE:CPU': 'Unable to start worker: '
-                        'Worker pool does not contain a machine with sufficient CPU resources.'
-                }.get(
-                    response['failures'][0]['reason'],
-                    'Unable to start worker: %s' % response['failures'][0]['reason']
-                ))
+            raise RuntimeError('Unable to start worker: %s' % response['failures'][0]['reason'])
 
     def stop(self, ecs_client):
         response = ecs_client.stop_task(

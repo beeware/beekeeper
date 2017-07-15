@@ -317,6 +317,16 @@ class Build(models.Model):
     def is_error(self):
         return self.status == Build.STATUS_ERROR
 
+    def full_status_display(self):
+        if self.status == Build.STATUS_ERROR:
+            return "Error: %s" % self.error
+        elif self.status == Build.STATUS_PENDING:
+            return "Pending (for %s)" % timesince(self.pending)
+        elif self.status == Build.STATUS_RUNNING:
+            return "Running (for %s)" % timesince(self.running)
+        else:
+            return self.get_status_display()
+
     def start(self):
         start_build.send(sender=Build, build=self)
 

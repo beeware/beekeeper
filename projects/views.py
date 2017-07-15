@@ -146,7 +146,8 @@ def build_status(request, owner, repo_name, change_pk, build_pk):
                 task.slug: {
                         'url': task.get_absolute_url(),
                         'name': task.name,
-                        'status': task.get_status_display(),
+                        'phase': task.phase,
+                        'status': task.full_status_display(),
                         'result': task.result,
                     }
                 for task in build.tasks.all()
