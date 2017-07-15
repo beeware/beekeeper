@@ -153,7 +153,7 @@ def check_build(self, build_pk):
             print("There are %s active tasks." % started_tasks.count())
             response = ecs_client.describe_tasks(
                  cluster=settings.AWS_ECS_CLUSTER_NAME,
-                 tasks=[task.arn for task in started_tasks]
+                 tasks=[task.arn for task in started_tasks if task.arn]
             )
 
             for task_response in response['tasks']:
