@@ -163,7 +163,10 @@ def check_build(self, build_pk):
                     print('Task %s: pending for %s' % (
                         task, timesince(task.pending)
                     ))
-                    if timezone.now() - task.pending > timedelta(seconds=300):
+                    if timezone.now() - task.pending < timedelta(seconds=300):
+                        print('   Trying to start again...')
+                        task.start(ecs_client)
+                    else:
                         print('   Killing task...')
                         task.status = Task.STATUS_ERROR
                         task.error = "Timeout waiting for task to start."
