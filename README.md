@@ -76,19 +76,24 @@ Amazon AWS
 ~~~~~~~~~~
 
 Log into (or sign up for) your Amazon AWS account, and obtain an access key
-and secret access key. Create the `AWS_ACCESS_KEY_ID` and
+and secret access key. Create the `AWS_ACCESS_KEY_ID`, `AWS_REGION` and
 `AWS_SECRET_ACCESS_KEY` Heroku configuration variables, and put::
 
     AWS_ACCESS_KEY_ID=<your key here>
+    AWS_REGION=<your AWS region>
     AWS_SECRET_ACCESS_KEY=<your secret key here>
 
 In the .env file in the project home directory.
 
 Go to the ECS panel and create an EC2 cluster in an AWS
-region of your choice. Create the `AWS_ECS_REGION_NAME`
-and `AWS_ECS_CLUSTER_NAME` Heroku configuration variables, and put::
+region of your choice. If you create an "empty" cluster, BeeKeeper
+will spin up new instances whenever build tasks are submitted. If you
+create a non-empty cluster, those resources will be permanently
+available for builds - but you'll also be paying for that availability.
 
-    AWS_ECS_REGION_NAME=<your region ID here>
+Once you've created your cluster, set the and `AWS_ECS_CLUSTER_NAME` Heroku
+configuration variables, and put::
+
     AWS_ECS_CLUSTER_NAME=<your cluster name here>
 
 In the .env file in the project home directory.

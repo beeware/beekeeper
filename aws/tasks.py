@@ -113,11 +113,12 @@ def check_build(self, build_pk):
     build = Build.objects.get(pk=build_pk)
 
     aws_session = boto3.session.Session(
-        region_name=settings.AWS_ECS_REGION_NAME,
+        region_name=settings.AWS_REGION,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     )
     ecs_client = aws_session.client('ecs')
+    ec2_client = aws_session.client('ec2')
 
     gh_session = GitHub(
             settings.GITHUB_USERNAME,
@@ -144,7 +145,7 @@ def check_build(self, build_pk):
         if initial_tasks:
             for task in initial_tasks:
                 print("Starting task %s..." % task.name)
-                task.start(ecs_client)
+                task.start(ecs_client, ec2_client)
         else:
             raise ValueError("No phase 0 tasks defined for build type '%s'" % build.change.change_type)
 
@@ -165,7 +166,7 @@ def check_build(self, build_pk):
                     ))
                     if timezone.now() - task.pending < timedelta(seconds=300):
                         print('   Trying to start again...')
-                        task.start(ecs_client)
+                        task.start(ecs_client, ec2_client)
                     else:
                         print('   Killing task...')
                         task.status = Task.STATUS_ERROR
@@ -248,7 +249,7 @@ def check_build(self, build_pk):
                 print("Starting new tasks...")
                 for task in new_tasks:
                     print("Starting task %s..." % task.name)
-                    task.start(ecs_client)
+                    task.start(ecs_client, ec2_client)
             elif new_tasks is None:
                 print("Build aborted.")
                 build.save()

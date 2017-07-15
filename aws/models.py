@@ -155,7 +155,7 @@ class Task(models.Model):
         else:
             return self.get_status_display()
 
-    def start(self, ecs_client):
+    def start(self, ecs_client, ec2_client):
         environment = {
             'GITHUB_OWNER': self.build.commit.repository.owner.login,
             'GITHUB_PROJECT_NAME': self.build.commit.repository.name,
@@ -194,6 +194,17 @@ class Task(models.Model):
             self.save()
         elif response['failures'][0]['reason'] in ['RESOURCE:CPU']:
             if self.status == Task.STATUS_CREATED:
+                ec2_client.run_instances(
+                    ImageId='ami-57d9cd2e',
+                    InstanceType='c4.2xlarge',
+                    MinCount=1,
+                    MaxCount=1,
+                    IamInstanceProfile={
+                        "Name": "ecsInstanceRole"
+                    },
+                    UserData="#!/bin/bash \n echo ECS_CLUSTER=%s >> /etc/ecs/ecs.config" % settings.AWS_ECS_CLUSTER_NAME
+                )
+
                 self.status = Task.STATUS_PENDING
                 self.pending = timezone.now()
                 self.save()

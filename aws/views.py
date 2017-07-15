@@ -50,7 +50,7 @@ def task_status(request, owner, repo_name, change_pk, build_pk, task_slug):
         kwargs = {}
 
     aws_session = boto3.session.Session(
-        region_name=settings.AWS_ECS_REGION_NAME,
+        region_name=settings.AWS_REGION,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     )

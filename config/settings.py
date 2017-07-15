@@ -184,9 +184,10 @@ AWS_STORAGE_BUCKET_NAME = 'beekeeper'
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_REGION = os.environ.get('AWS_REGION')
 
-AWS_ECS_REGION_NAME = os.environ.get('AWS_ECS_REGION_NAME')
-AWS_ECS_CLUSTER_NAME = os.environ.get('AWS_ECS_CLUSTER_NAME')
+AWS_ECS_CLUSTER_NAME = os.environ.get('AWS_ECS_CLUSTER_NAME', 'workers')
+AWS_ECS_IMAGE = os.environ.get('AWS_ECS_IMAGE', 'ami-57d9cd2e')
 
 ######################################################################
 # Sendgrid
