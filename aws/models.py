@@ -27,6 +27,9 @@ class TaskQuerySet(models.QuerySet):
                     Task.STATUS_STOPPING,
                 ))
 
+    def pending(self):
+        return self.filter(status=Task.STATUS_PENDING)
+
     def running(self):
         return self.filter(status=Task.STATUS_RUNNING)
 
@@ -89,6 +92,8 @@ class Task(models.Model):
     descriptor = models.CharField(max_length=100)
     arn = models.CharField(max_length=100, null=True, blank=True)
 
+    error = models.TextField(blank=True)
+
     class Meta:
         ordering = ('phase', 'name',)
         unique_together = [('build', 'slug')]
@@ -137,7 +142,9 @@ class Task(models.Model):
         )
 
     def full_status_display(self):
-        if self.status == Task.STATUS_PENDING:
+        if self.status == Task.STATUS_ERROR:
+            return "Error: %s" % self.error
+        elif self.status == Task.STATUS_PENDING:
             return "Pending (for %s)" % timesince(self.pending)
         elif self.status == Task.STATUS_RUNNING:
             return "Running (for %s)" % timesince(self.started)

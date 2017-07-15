@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import boto3
 
 from github3 import GitHub
@@ -8,6 +10,7 @@ from config.celery import app
 
 from django.conf import settings
 from django.utils import timezone
+from django.utils.timesince import timesince
 
 from projects.models import Change, Build
 from aws.models import Task
@@ -152,11 +155,24 @@ def check_build(self, build_pk):
         if started_tasks:
             print("There are %s active tasks." % started_tasks.count())
             # Only check the *running* tasks - the ones where we have an ARN
-            arns = [task.arn for task in started_tasks if task.arn]
-            if arns:
+            running_arns = [task.arn for task in started_tasks if task.arn]
+            pending_tasks = [task for task in started_tasks if task.arn is None]
+
+            if pending_tasks:
+                for task in pending_tasks:
+                    print('Task %s: pending for %s' % (
+                        task, timesince(task.pending)
+                    ))
+                    if timezone.now - task.pending > timedelta(seconds=300):
+                        print('   Killing task...')
+                        task.status = Task.STATUS_ERROR
+                        task.error = "Timeout waiting for task to start."
+                        task.save()
+
+            if running_arns:
                 response = ecs_client.describe_tasks(
                      cluster=settings.AWS_ECS_CLUSTER_NAME,
-                     tasks=arns
+                     tasks=running_arns
                 )
 
                 for task_response in response['tasks']:
@@ -191,6 +207,7 @@ def check_build(self, build_pk):
                         task.completed = timezone.now()
                     elif task_response['lastStatus'] == 'FAILED':
                         task.status = Task.STATUS_ERROR
+                        task.error = "AWS task failure."
                     elif task_response['lastStatus'] != 'PENDING':
                         raise ValueError('Unknown task status %s' % task_response['lastStatus'])
                     task.save()
