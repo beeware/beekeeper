@@ -3,6 +3,7 @@ import uuid
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.timesince import timesince
 
 from github import models as github
 
