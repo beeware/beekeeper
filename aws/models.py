@@ -7,6 +7,7 @@ from django.contrib.postgres import fields as postgres
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.timesince import timesince
 
 from projects.models import Build
 
