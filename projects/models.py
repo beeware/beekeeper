@@ -330,6 +330,7 @@ class Build(models.Model):
         if self.is_finished:
             self.tasks.all().delete()
             self.status = Build.STATUS_CREATED
+            self.result = Build.RESULT_PENDING
             self.error = ''
             self.save()
             self.start()
