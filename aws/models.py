@@ -136,6 +136,10 @@ class Task(models.Model):
         )
 
     @property
+    def has_error(self):
+        return self.status == Task.STATUS_ERROR
+
+    @property
     def log_stream_name(self):
         return '%s/%s/%s' % (
             self.descriptor, self.descriptor, self.arn.rsplit('/', 1)[1]

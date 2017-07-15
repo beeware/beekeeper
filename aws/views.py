@@ -70,10 +70,16 @@ def task_status(request, owner, repo_name, change_pk, build_pk, task_slug):
         next_token = log_response['nextForwardToken']
         no_more_logs = log_response['nextForwardToken'] == kwargs.get('nextToken', None)
     except Exception as e:
-        log_data = None
-        message = 'Waiting for logs to become available...'
-        next_token = ''
-        no_more_logs = False
+        if task.has_error:
+            log_data = None
+            message = None
+            next_token = ''
+            no_more_logs = True
+        else:
+            log_data = None
+            message = 'Waiting for logs to become available...'
+            next_token = ''
+            no_more_logs = False
 
     return HttpResponse(json.dumps({
             'started': task.has_started,
