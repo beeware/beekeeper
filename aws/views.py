@@ -72,7 +72,7 @@ def task_status(request, owner, repo_name, change_pk, build_pk, task_slug):
     except Exception as e:
         if task.has_error:
             log_data = None
-            message = None
+            message = 'No logs; task did not start.'
             next_token = ''
             no_more_logs = True
         else:
