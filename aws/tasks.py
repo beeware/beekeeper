@@ -213,32 +213,32 @@ def check_build(self, build_pk):
                     task.save()
 
         # If there are still tasks running, wait for them to finish.
-        running_tasks = build.tasks.not_finished()
-        if running_tasks.exists():
-            running_phase = max(running_tasks.values_list('phase', flat=True))
+        unfinished_tasks = build.tasks.not_finished()
+        if unfinished_tasks.exists():
+            running_phase = max(unfinished_tasks.values_list('phase', flat=True))
             print("Still waiting for tasks in phase %s to complete." % running_phase)
         else:
             # There are no unfinished tasks.
             # If there have been any failures or task errors, stop right now.
             # Otherwise, queue up tasks for the next phase.
-            completed_tasks = build.tasks.done()
-            completed_phase = max(completed_tasks.values_list('phase', flat=True))
+            finished_tasks = build.tasks.finished()
+            finished_phase = max(finished_tasks.values_list('phase', flat=True))
 
-            if completed_tasks.error().exists():
-                print("Errors encountered during phase %s" % completed_phase)
+            if finished_tasks.error().exists():
+                print("Errors encountered during phase %s" % finished_phase)
                 new_tasks = None
                 build.status = Build.STATUS_ERROR
                 build.result = Build.RESULT_FAIL
                 build.error = "%s tasks generated errors" % build.tasks.error().count()
-            elif completed_tasks.failed().exists():
-                print("Failures encountered during phase %s" % completed_phase)
+            elif finished_tasks.failed().exists():
+                print("Failures encountered during phase %s" % finished_phase)
                 new_tasks = None
                 build.status = Build.STATUS_DONE
                 build.result = Build.RESULT_FAIL
             else:
                 new_tasks = build.tasks.filter(
                                 status=Task.STATUS_CREATED,
-                                phase=completed_phase + 1
+                                phase=finished_phase + 1
                             )
 
             if new_tasks:
