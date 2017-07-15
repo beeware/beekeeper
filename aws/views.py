@@ -79,7 +79,7 @@ def task_status(request, owner, repo_name, change_pk, build_pk, task_slug):
             'started': task.has_started,
             'log': log_data,
             'message': message,
-            'status': task.get_status_display(),
+            'status': task.full_status_display(),
             'result': task.result,
             'nextToken': next_token,
             'finished': task.is_finished and no_more_logs,

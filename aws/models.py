@@ -135,6 +135,14 @@ class Task(models.Model):
             self.descriptor, self.descriptor, self.arn.rsplit('/', 1)[1]
         )
 
+    def full_status_display(self):
+        if self.status == Task.STATUS_PENDING:
+            return "Pending (for %s)" % timesince(self.pending)
+        elif self.status == Task.STATUS_RUNNING:
+            return "Running (for %s)" % timesince(self.started)
+        else:
+            return self.get_status_display()
+
     def start(self, ecs_client):
         environment = {
             'GITHUB_OWNER': self.build.commit.repository.owner.login,

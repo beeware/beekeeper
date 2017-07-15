@@ -139,8 +139,7 @@ def build_status(request, owner, repo_name, change_pk, build_pk):
         raise Http404
 
     return HttpResponse(json.dumps({
-            'status': build.get_status_display(),
-            'error': build.error,
+            'status': build.full_status_display(),
             'result': build.result,
             'tasks': {
                 task.slug: {

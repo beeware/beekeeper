@@ -151,46 +151,49 @@ def check_build(self, build_pk):
         started_tasks = build.tasks.started()
         if started_tasks:
             print("There are %s active tasks." % started_tasks.count())
-            response = ecs_client.describe_tasks(
-                 cluster=settings.AWS_ECS_CLUSTER_NAME,
-                 tasks=[task.arn for task in started_tasks if task.arn]
-            )
-
-            for task_response in response['tasks']:
-                print('Task %s: %s' % (
-                    task_response['taskArn'],
-                    task_response['lastStatus'])
+            # Only check the *running* tasks - the ones where we have an ARN
+            arns = [task.arn for task in started_tasks if task.arn]
+            if arns:
+                response = ecs_client.describe_tasks(
+                     cluster=settings.AWS_ECS_CLUSTER_NAME,
+                     tasks=arns
                 )
-                task = build.tasks.get(arn=task_response['taskArn'])
-                if task_response['lastStatus'] == 'RUNNING':
-                    task.status = Task.STATUS_RUNNING
-                elif task_response['lastStatus'] == 'STOPPED':
-                    task.status = Task.STATUS_DONE
 
-                    # Determine the status of the task
-                    failed_containers = [
-                        container['name']
-                        for container in task_response['containers']
-                        if container['exitCode'] != 0
-                    ]
-                    if failed_containers:
-                        if task.is_critical:
-                            task.result = Build.RESULT_FAIL
+                for task_response in response['tasks']:
+                    print('Task %s: %s' % (
+                        task_response['taskArn'],
+                        task_response['lastStatus'])
+                    )
+                    task = build.tasks.get(arn=task_response['taskArn'])
+                    if task_response['lastStatus'] == 'RUNNING':
+                        task.status = Task.STATUS_RUNNING
+                    elif task_response['lastStatus'] == 'STOPPED':
+                        task.status = Task.STATUS_DONE
+
+                        # Determine the status of the task
+                        failed_containers = [
+                            container['name']
+                            for container in task_response['containers']
+                            if container['exitCode'] != 0
+                        ]
+                        if failed_containers:
+                            if task.is_critical:
+                                task.result = Build.RESULT_FAIL
+                            else:
+                                task.result = Build.RESULT_NON_CRITICAL_FAIL
                         else:
-                            task.result = Build.RESULT_NON_CRITICAL_FAIL
-                    else:
-                        task.result = Build.RESULT_PASS
+                            task.result = Build.RESULT_PASS
 
-                    # Report the status to Github.
-                    task.report(gh_repo)
+                        # Report the status to Github.
+                        task.report(gh_repo)
 
-                    # Record the completion time.
-                    task.completed = timezone.now()
-                elif task_response['lastStatus'] == 'FAILED':
-                    task.status = Task.STATUS_ERROR
-                elif task_response['lastStatus'] != 'PENDING':
-                    raise ValueError('Unknown task status %s' % task_response['lastStatus'])
-                task.save()
+                        # Record the completion time.
+                        task.completed = timezone.now()
+                    elif task_response['lastStatus'] == 'FAILED':
+                        task.status = Task.STATUS_ERROR
+                    elif task_response['lastStatus'] != 'PENDING':
+                        raise ValueError('Unknown task status %s' % task_response['lastStatus'])
+                    task.save()
 
         # If there are still tasks running, wait for them to finish.
         running_tasks = build.tasks.not_finished()
