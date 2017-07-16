@@ -72,6 +72,13 @@ def resume_build(modeladmin, request, queryset):
 resume_build.short_description = "Resume build"
 
 
+def stop_build(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.stop()
+        messages.info(request, 'Stopping build %s' % obj)
+stop_build.short_description = "Stop build"
+
+
 class TaskInline(admin.TabularInline):
     model = apps.get_model(settings.BEEKEEPER_BUILD_APP, 'Task')
     fields = ['name', 'phase', 'status', 'result']
@@ -83,7 +90,7 @@ class BuildAdmin(admin.ModelAdmin):
     list_display = ['display_pk', 'project', 'change', 'commit_sha', 'user_with_avatar', 'status', 'result']
     list_filter = ['change__change_type', 'status']
     raw_id_fields = ['commit', 'change']
-    actions = [restart_build, resume_build]
+    actions = [restart_build, resume_build, stop_build]
     inlines = [TaskInline]
 
     def display_pk(self, build):

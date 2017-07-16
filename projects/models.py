@@ -202,7 +202,7 @@ class Change(models.Model):
         self.completed = timezone.now()
         self.save()
 
-        for build in self.builds.pending():
+        for build in self.builds.started():
             build.stop()
 
     def ignore(self):
@@ -211,7 +211,7 @@ class Change(models.Model):
 
 
 class BuildQuerySet(models.QuerySet):
-    def pending(self):
+    def started(self):
         return self.filter(status__in=(
                     Build.STATUS_CREATED,
                     Build.STATUS_RUNNING)
@@ -304,6 +304,13 @@ class Build(models.Model):
     @property
     def display_pk(self):
         return self.id.hex[:8]
+
+    @property
+    def has_started(self):
+        return self.status in (
+            Build.STATUS_CREATED,
+            Build.STATUS_RUNNING
+        )
 
     @property
     def is_finished(self):

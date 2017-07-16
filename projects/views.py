@@ -116,6 +116,8 @@ def build(request, owner, repo_name, change_pk, build_pk):
             build.resume()
         elif 'restart' in request.POST:
             build.restart()
+        elif 'stop' in request.POST:
+            build.stop()
 
         return redirect(build.get_absolute_url())
 

@@ -71,7 +71,7 @@ def new_pull_request_build(sender, update=None, *args, **kwargs):
                     )
 
             # Stop all pending builds on this change.
-            for build in change.builds.pending():
+            for build in change.builds.started():
                 build.stop()
 
             # Create a new build.
