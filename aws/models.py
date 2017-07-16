@@ -179,6 +179,7 @@ class Task(models.Model):
         }
         container_definition.update(self.overrides)
 
+        print("Attempting to run task %s" % self.descriptor)
         response = ecs_client.run_task(
             cluster=settings.AWS_ECS_CLUSTER_NAME,
             taskDefinition=self.descriptor,
@@ -186,14 +187,18 @@ class Task(models.Model):
                 'containerOverrides': [container_definition]
             }
         )
+        print("Reponse: ", response)
         if response['tasks']:
+            print("Task has started")
             self.arn = response['tasks'][0]['taskArn']
             self.status = Task.STATUS_PENDING
             self.pending = timezone.now()
             self.started = timezone.now()
             self.save()
         elif response['failures'][0]['reason'] in ['RESOURCE:CPU']:
+            print("Task has failed to start due to resources (current status %s)" % self.get_status_display())
             if self.status == Task.STATUS_CREATED:
+                print("Spawning new instance...")
                 ec2_client.run_instances(
                     ImageId='ami-57d9cd2e',
                     InstanceType='c4.2xlarge',
