@@ -38,14 +38,14 @@ def task_configs(config):
                         # The environment is the phase environment, overridden
                         # by the task environment.
                         task_env = phase_config.get('environment', {}).copy()
-                        task_overrides = phase_config.get('overrides', {}).copy()
                         if task_config:
                             task_env.update(task_config.get('environment', {}))
-                            task_overrides.update(task_config.get('overrides', {}))
+                            task_profile = task_config.get('profile', phase_config.get('profile'))
 
                             full_name = task_config.get('name', task_name)
                         else:
                             full_name = task_name
+                            task_profile = None
 
                         task_data.append({
                             'name': full_name,
@@ -53,7 +53,7 @@ def task_configs(config):
                             'phase': phase,
                             'is_critical': task_config.get('critical', True),
                             'environment': task_env,
-                            'overrides': task_overrides,
+                            'profile': task_profile,
                             'descriptor': descriptor,
                         })
 
@@ -64,7 +64,7 @@ def task_configs(config):
                     'phase': phase,
                     'is_critical': phase_config.get('critical', True),
                     'environment': phase_config.get('environment', {}),
-                    'overrides': phase_config.get('overrides', {}),
+                    'profile': phase_config.get('profile'),
                     'descriptor': phase_config['task'],
                 })
             else:

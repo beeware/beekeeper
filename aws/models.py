@@ -88,7 +88,7 @@ class Task(models.Model):
     completed = models.DateTimeField(null=True, blank=True)
 
     environment = postgres.JSONField()
-    overrides = postgres.JSONField()
+    profile = models.CharField(max_length=100, null=True)
     descriptor = models.CharField(max_length=100)
     arn = models.CharField(max_length=100, null=True, blank=True)
 
@@ -177,7 +177,11 @@ class Task(models.Model):
                 for key, value in environment.items()
             ],
         }
-        container_definition.update(self.overrides)
+
+        if self.profile == 'hi-cpu':
+            container_definition.update({
+                'cpu': 8192
+            })
 
         print("Attempting to run task %s" % self.descriptor)
         response = ecs_client.run_task(
@@ -198,7 +202,7 @@ class Task(models.Model):
         elif response['failures'][0]['reason'] in ['RESOURCE:CPU']:
             print("Task has failed to start due to resources (current status %s)" % self.get_status_display())
             if self.status == Task.STATUS_CREATED:
-                print("Spawning new instance...")
+                print("Spawning new c4.2xlarge instance...")
                 ec2_client.run_instances(
                     ImageId='ami-57d9cd2e',
                     InstanceType='c4.2xlarge',
