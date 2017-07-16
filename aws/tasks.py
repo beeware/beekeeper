@@ -271,7 +271,7 @@ def check_build(self, build_pk):
         running_tasks = build.tasks.running()
         stopping_tasks = build.tasks.stopping()
         if running_tasks:
-            print("There are %s active tasks." % started_tasks.count())
+            print("There are %s active tasks." % running_tasks.count())
             for task in running_tasks:
                 task.stop(ecs_client)
         elif stopping_tasks:
