@@ -208,6 +208,7 @@ class Task(models.Model):
                     InstanceType='c4.2xlarge',
                     MinCount=1,
                     MaxCount=1,
+                    KeyName='rkm',
                     IamInstanceProfile={
                         "Name": "ecsInstanceRole"
                     },
