@@ -16,7 +16,7 @@
         {% if user.is_superuser %}
         <input id="restart" type="submit" class="btn btn-success float-right control{% if not build.is_finished %} hidden{% endif %}" value="Restart" name="restart">
         <input id="resume" type="submit" class="btn btn-success float-right control{% if not build.is_error %} hidden{% endif %}" value="Resume" name="resume">
-        <input id="resume" type="submit" class="btn btn-danger float-right control{% if not build.has_started %} hidden{% endif %}" value="Stop" name="stop">
+        <input id="stop" type="submit" class="btn btn-danger float-right control{% if not build.has_started %} hidden{% endif %}" value="Stop" name="stop">
         {% endif %}
     </h1>
     </form>
@@ -174,6 +174,7 @@ function refresh() {
                     }
 
                     if (response['finished']) {
+                        document.getElementById('stop').style.display = 'none';
                         document.getElementById('restart').style.display = 'block';
                     } else {
                         window.setTimeout(refresh, 10000);
