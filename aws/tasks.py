@@ -184,6 +184,7 @@ def check_build(self, build_pk):
                         task_response['taskArn'],
                         task_response['lastStatus'])
                     )
+                    print(task_response)
                     task = build.tasks.get(arn=task_response['taskArn'])
                     if task_response['lastStatus'] == 'RUNNING':
                         task.status = Task.STATUS_RUNNING
