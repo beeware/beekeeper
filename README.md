@@ -91,15 +91,20 @@ will spin up new instances whenever build tasks are submitted. If you
 create a non-empty cluster, those resources will be permanently
 available for builds - but you'll also be paying for that availability.
 
-Once you've created your cluster, set the and `AWS_ECS_CLUSTER_NAME` Heroku
+Once you've created your cluster, set the `AWS_ECS_CLUSTER_NAME` Heroku
 configuration variables, and put::
 
+    AWS_ECS_AMI=<your prefered AWS image; 'ami-57d9cd2e' by default>
     AWS_ECS_CLUSTER_NAME=<your cluster name here>
+    AWS_ECS_SUBNET_ID=<your ECS subnet>
+    AWS_ECS_SECURITY_GROUP_IDS=<colon separate list of security key IDs>
 
 In the .env file in the project home directory.
 
 Docker images
 ~~~~~~~~~~~~~
 
+Create a clone of the `pybee/comb <https://github.com/pybee/comb>`__
+
     $ pip install waggle
-    $ register-task docker/dostuff
+    $ waggle waggler

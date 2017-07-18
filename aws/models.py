@@ -204,11 +204,13 @@ class Task(models.Model):
             if self.status == Task.STATUS_CREATED:
                 print("Spawning new c4.2xlarge instance...")
                 ec2_client.run_instances(
-                    ImageId='ami-57d9cd2e',
+                    ImageId=settings.AWS_ECS_AMI,
                     InstanceType='c4.2xlarge',
                     MinCount=1,
                     MaxCount=1,
                     KeyName='rkm',
+                    SecurityGroupIds=settings.AWS_ECS_SECURITY_GROUP_IDS.split(':'),
+                    SubnetId=settings.AWS_ECS_SUBNET_ID,
                     IamInstanceProfile={
                         "Name": "ecsInstanceRole"
                     },

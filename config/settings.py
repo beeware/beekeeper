@@ -187,7 +187,9 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_REGION = os.environ.get('AWS_REGION')
 
 AWS_ECS_CLUSTER_NAME = os.environ.get('AWS_ECS_CLUSTER_NAME', 'workers')
-AWS_ECS_IMAGE = os.environ.get('AWS_ECS_IMAGE', 'ami-57d9cd2e')
+AWS_ECS_AMI = os.environ.get('AWS_ECS_AMI', 'ami-57d9cd2e')
+AWS_ECS_SUBNET_ID = os.environ.get('AWS_ECS_SUBNET_ID')
+AWS_ECS_SECURITY_GROUP_IDS = os.environ.get('AWS_ECS_SECURITY_GROUP_IDS')
 
 ######################################################################
 # Sendgrid
