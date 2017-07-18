@@ -2,7 +2,7 @@ import hashlib
 import json
 
 from django.conf import settings
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.views.decorators.http import etag
 from django.shortcuts import render, redirect
 from django.views.decorators.cache import never_cache
