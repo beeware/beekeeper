@@ -156,12 +156,23 @@ class Task(models.Model):
             return self.get_status_display()
 
     def start(self, ecs_client, ec2_client):
+        if self.build.change.is_pull_request:
+            pr_number = self.build.change.pull_request.number
+        else:
+            pr_number = ''
+
+        prev_success = self.build.previous_success
+        if prev_success:
+            last_success_sha = prev_success.commit.sha
+        else:
+            last_success_sha = ''
+
         environment = {
             'GITHUB_OWNER': self.build.commit.repository.owner.login,
             'GITHUB_PROJECT_NAME': self.build.commit.repository.name,
-            'GITHUB_PR_NUMBER': self.build.change.pull_request.number if self.build.change.is_pull_request else None,
+            'GITHUB_PR_NUMBER': pr_number,
             'CODE_URL': self.build.get_code_url(),
-            'LAST_SUCCESS_SHA': self.build.previous_success.commit.sha,
+            'LAST_SUCCESS_SHA': last_success_sha,
             'SHA': self.build.commit.sha,
             'TASK': self.slug.split(':')[-1],
         }
