@@ -76,7 +76,7 @@ def task_configs(config):
 
 def create_tasks(gh_repo, build):
     # Download the config file from Github.
-    content = gh_repo.contents('beekeeper/config.yml', ref=build.commit.sha)
+    content = gh_repo.contents('beekeeper.yml', ref=build.commit.sha)
     if content is None:
         raise ValueError("Repository doesn't contain BeeKeeper config file.")
 
