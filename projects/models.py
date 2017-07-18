@@ -395,5 +395,3 @@ class Build(models.Model):
         elif self.status == Build.STATUS_RUNNING:
             self.status = Build.STATUS_STOPPING
             self.save()
-        else:
-            raise RuntimeError("Build %s isn't running")
