@@ -184,32 +184,43 @@ def check_build(self, build_pk):
                         task_response['taskArn'],
                         task_response['lastStatus'])
                     )
-                    print(task_response)
+                    print('Full response: %s' % task_response)
+
                     task = build.tasks.get(arn=task_response['taskArn'])
                     if task_response['lastStatus'] == 'RUNNING':
                         task.status = Task.STATUS_RUNNING
                     elif task_response['lastStatus'] == 'STOPPED':
-                        task.status = Task.STATUS_DONE
+                        if all('exitCode' in container for container in task_response['containers']):
+                            task.status = Task.STATUS_DONE
 
-                        # Determine the status of the task
-                        failed_containers = [
-                            container['name']
-                            for container in task_response['containers']
-                            if container['exitCode'] != 0
-                        ]
-                        if failed_containers:
-                            if task.is_critical:
-                                task.result = Build.RESULT_FAIL
+                            # Determine the status of the task
+                            failed_containers = [
+                                container['name']
+                                for container in task_response['containers']
+                                if container['exitCode'] != 0
+                            ]
+                            if failed_containers:
+                                if task.is_critical:
+                                    task.result = Build.RESULT_FAIL
+                                else:
+                                    task.result = Build.RESULT_NON_CRITICAL_FAIL
                             else:
-                                task.result = Build.RESULT_NON_CRITICAL_FAIL
+                                task.result = Build.RESULT_PASS
+
+                            # Report the status to Github.
+                            task.report(gh_repo)
+
+                            # Record the completion time.
+                            task.completed = timezone.now()
                         else:
-                            task.result = Build.RESULT_PASS
-
-                        # Report the status to Github.
-                        task.report(gh_repo)
-
-                        # Record the completion time.
-                        task.completed = timezone.now()
+                            # A container didn't have a status code; that means a
+                            # pre-start failure.
+                            task.status = Task.STATUS_ERROR
+                            task.error = '; '.join(
+                                container.get('reason')
+                                for container in task_response['containers']
+                                if container.get('reason')
+                            )
                     elif task_response['lastStatus'] == 'FAILED':
                         task.status = Task.STATUS_ERROR
                         task.error = "AWS task failure."
@@ -286,6 +297,8 @@ def check_build(self, build_pk):
                     task_response['taskArn'],
                     task_response['lastStatus'])
                 )
+                print('Full response: %s' % task_response)
+
                 task = build.tasks.get(arn=task_response['taskArn'])
                 if task_response['lastStatus'] == 'STOPPED':
                     task.status = Task.STATUS_STOPPED
