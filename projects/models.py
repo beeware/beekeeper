@@ -81,13 +81,12 @@ class Project(models.Model):
     def pull_requests(self):
         return Change.objects.filter(change_type=Change.CHANGE_TYPE_PULL_REQUEST)
 
-    @property
-    def current_build(self):
+    def current_build(self, branch_name):
         try:
             return Build.objects.filter(
                     change__project=self,
                     change__change_type=Change.CHANGE_TYPE_PUSH,
-                    commit__branch_name=self.repository.master_branch_name,
+                    commit__branch_name=branch_name,
                 ).finished().latest('created')
         except (Change.DoesNotExist, Build.DoesNotExist):
             return None
@@ -103,6 +102,16 @@ class Project(models.Model):
     def ignore(self):
         self.status = Project.STATUS_IGNORED
         self.save()
+
+
+class Variable(models.Model):
+    project = models.ForeignKey(Project, related_name='variables')
+    task_name = models.CharField(max_length=100, db_index=True)
+    key = models.CharField(max_length=100)
+    value = models.CharField(max_length=2043)
+
+    class Meta:
+        ordering = ('task_name', 'key')
 
 
 class Change(models.Model):
@@ -158,7 +167,7 @@ class Change(models.Model):
         if self.pull_request:
             return 'PR #%s' % self.pull_request.number
         else:
-            return self.push.commit.display_sha
+            return "%s:%s" % (self.push.commit.branch_name, self.push.commit.display_sha)
 
     @property
     def description(self):
@@ -301,6 +310,13 @@ class Build(models.Model):
                     'build_pk': str(self.pk)
                 })
 
+    def get_code_url(self):
+        return reverse('projects:build-code', kwargs={
+                    'owner': self.change.project.repository.owner.login,
+                    'repo_name': self.change.project.repository.name,
+                    'change_pk': str(self.change.pk),
+                    'build_pk': str(self.pk)
+                })
     @property
     def display_pk(self):
         return self.id.hex[:8]
@@ -323,6 +339,28 @@ class Build(models.Model):
     @property
     def is_error(self):
         return self.status == Build.STATUS_ERROR
+
+    @property
+    def previous_success_sha(self):
+        try:
+            if self.change.change_type == Change.CHANGE_TYPE_PULL_REQUEST:
+                return Build.objects.filter(
+                            change=self.change,
+                            status=Build.STATUS_DONE,
+                            result=Build.RESULT_PASS,
+                            created__lte=self.created,
+                        ).latest('completed').commit.sha
+            else:
+                return Build.objects.filter(
+                            change__project=self.change.project,
+                            change__change_type=self.change.change_type,
+                            commit__branch_name=self.commit.branch_name,
+                            status=Build.STATUS_DONE,
+                            result=Build.RESULT_PASS,
+                            created__lte=self.created
+                        ).latest('completed').commit.sha
+        except Build.DoesNotExist:
+            return None
 
     def full_status_display(self):
         if self.status == Build.STATUS_ERROR:

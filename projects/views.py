@@ -40,7 +40,8 @@ def project_shield(request, owner, repo_name):
     except Project.DoesNotExist:
         raise Http404
 
-    build = project.current_build
+    branch = request.GET.get('branch', project.repository.master_branch_name)
+    build = project.current_build(branch)
     if build:
         if build.result == Build.RESULT_PASS:
             status = 'pass'
@@ -155,3 +156,23 @@ def build_status(request, owner, repo_name, change_pk, build_pk):
             },
             'finished': build.is_finished
         }), content_type="application/json")
+
+
+def build_code(request, owner, repo_name, change_pk, build_pk):
+    try:
+        build = Build.objects.get(
+                        change__project__repository__owner__login=owner,
+                        change__project__repository__name=repo_name,
+                        change__pk=change_pk,
+                        pk=build_pk,
+                    )
+    except Build.DoesNotExist:
+        raise Http404
+
+    return HttpResponseRedirect('https://%s:%s@github.com/%s/%s/archive/%s.zip' % (
+                settings.GITHUB_USERNAME,
+                settings.GITHUB_ACCESS_TOKEN,
+                repo_name,
+                owner,
+                build.commit.sha
+            ))

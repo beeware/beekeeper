@@ -159,12 +159,19 @@ class Task(models.Model):
         environment = {
             'GITHUB_OWNER': self.build.commit.repository.owner.login,
             'GITHUB_PROJECT_NAME': self.build.commit.repository.name,
-            'GITHUB_USERNAME': settings.GITHUB_USERNAME,
-            'GITHUB_ACCESS_TOKEN': settings.GITHUB_ACCESS_TOKEN,
             'GITHUB_PR_NUMBER': self.build.change.pull_request.number if self.build.change.is_pull_request else None,
+            'CODE_URL': self.build.get_code_url(),
+            'LAST_SUCCESS_SHA': self.build.previous_success.commit.sha,
             'SHA': self.build.commit.sha,
-            'TASK': self.slug.split(':')[-1]
+            'TASK': self.slug.split(':')[-1],
         }
+
+        # Add environment variables from the project configuration
+        for task_name in ['*', self.name]:
+            for key, value in self.build.project.variables.filter(task_name=task_name):
+                environment[key] = value
+
+        # Add environment variables from the task configuration
         environment.update(self.environment)
 
         container_definition = {
@@ -183,7 +190,6 @@ class Task(models.Model):
                 'cpu': 8192
             })
 
-        print("Attempting to run task %s" % self.descriptor)
         response = ecs_client.run_task(
             cluster=settings.AWS_ECS_CLUSTER_NAME,
             taskDefinition=self.descriptor,
@@ -191,16 +197,13 @@ class Task(models.Model):
                 'containerOverrides': [container_definition]
             }
         )
-        print("Reponse: ", response)
         if response['tasks']:
-            print("Task has started")
             self.arn = response['tasks'][0]['taskArn']
             self.status = Task.STATUS_PENDING
             self.pending = timezone.now()
             self.started = timezone.now()
             self.save()
         elif response['failures'][0]['reason'] in ['RESOURCE:CPU']:
-            print("Task has failed to start due to resources (current status %s)" % self.get_status_display())
             if self.status == Task.STATUS_CREATED:
                 print("Spawning new c4.2xlarge instance...")
                 ec2_client.run_instances(
