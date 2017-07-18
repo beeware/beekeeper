@@ -341,24 +341,20 @@ class Build(models.Model):
         return self.status == Build.STATUS_ERROR
 
     @property
-    def previous_success_sha(self):
+    def previous_success(self):
         try:
-            if self.change.change_type == Change.CHANGE_TYPE_PULL_REQUEST:
-                return Build.objects.filter(
-                            change=self.change,
-                            status=Build.STATUS_DONE,
-                            result=Build.RESULT_PASS,
-                            created__lte=self.created,
-                        ).latest('completed').commit.sha
-            else:
-                return Build.objects.filter(
-                            change__project=self.change.project,
-                            change__change_type=self.change.change_type,
-                            commit__branch_name=self.commit.branch_name,
-                            status=Build.STATUS_DONE,
-                            result=Build.RESULT_PASS,
-                            created__lte=self.created
-                        ).latest('completed').commit.sha
+            # This relies on a bit of a trick. If this is a PUSH, then
+            # pull_request is null - which means that this will find
+            # the last passing Push build on this project.
+            # However, if it *is* a PULL REQUEST, then it will find
+            # the most recent successful build on that change.
+            return Build.objects.filter(
+                        change__project=self.change.project,
+                        change__pull_request=self.pull_request,
+                        status=Build.STATUS_DONE,
+                        result=Build.RESULT_PASS,
+                        created__lte=self.created
+                    ).latest('completed')
         except Build.DoesNotExist:
             return None
 
