@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib import admin, messages
 from django.utils.safestring import mark_safe
 
-from .models import Project, Variable, Change, Build
+from .models import Project, ProjectSetting, Change, Build
 
 
 def approve(modeladmin, request, queryset):
@@ -30,8 +30,8 @@ def ignore(modeladmin, request, queryset):
 ignore.short_description = "Ignore"
 
 
-class VariableInline(admin.TabularInline):
-    model = Variable
+class ProjectSettingInline(admin.TabularInline):
+    model = ProjectSetting
     list_display = ['descriptor', 'key', 'value']
     extra = 0
 
@@ -42,12 +42,12 @@ class ProjectAdmin(admin.ModelAdmin):
     list_filter = ['status']
     raw_id_fields = ['repository']
     actions = [approve, attic, ignore]
-    inlines = [VariableInline]
+    inlines = [ProjectSettingInline]
 
 
-@admin.register(Variable)
-class VariableAdmin(admin.ModelAdmin):
-    model = Variable
+@admin.register(ProjectSetting)
+class ProjectSettingAdmin(admin.ModelAdmin):
+    model = ProjectSetting
     list_display = ['project', 'descriptor', 'key', 'value']
     raw_id_fields = ['project']
     extra = 0

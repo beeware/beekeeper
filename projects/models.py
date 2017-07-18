@@ -104,8 +104,8 @@ class Project(models.Model):
         self.save()
 
 
-class Variable(models.Model):
-    project = models.ForeignKey(Project, related_name='variables', null=True, blank=True)
+class ProjectSetting(models.Model):
+    project = models.ForeignKey(Project, related_name='settings', null=True, blank=True)
     descriptor = models.CharField(max_length=100, db_index=True)
     key = models.CharField(max_length=100)
     value = models.CharField(max_length=2043)
