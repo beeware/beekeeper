@@ -32,7 +32,7 @@ ignore.short_description = "Ignore"
 
 class VariableInline(admin.TabularInline):
     model = Variable
-    list_display = ['task_name', 'key', 'value']
+    list_display = ['descriptor', 'key', 'value']
     extra = 0
 
 
@@ -48,7 +48,7 @@ class ProjectAdmin(admin.ModelAdmin):
 @admin.register(Variable)
 class VariableAdmin(admin.ModelAdmin):
     model = Variable
-    list_display = ['project', 'task_name', 'key', 'value']
+    list_display = ['project', 'descriptor', 'key', 'value']
     raw_id_fields = ['project']
     extra = 0
 

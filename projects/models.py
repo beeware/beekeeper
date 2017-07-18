@@ -106,12 +106,16 @@ class Project(models.Model):
 
 class Variable(models.Model):
     project = models.ForeignKey(Project, related_name='variables', null=True, blank=True)
-    task_name = models.CharField(max_length=100, db_index=True)
+    descriptor = models.CharField(max_length=100, db_index=True)
     key = models.CharField(max_length=100)
     value = models.CharField(max_length=2043)
 
     class Meta:
-        ordering = ('task_name', 'key')
+        ordering = ('descriptor', 'key')
+        unique_together = ('project', 'descriptor', 'key')
+
+    def __str__(self):
+        return self.key
 
 
 class Change(models.Model):

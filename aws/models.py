@@ -184,8 +184,8 @@ class Task(models.Model):
         #  * Project variables for all tasks
         #  * Project variables for a specific task
         for project in [None, self.build.change.project]:
-            for task_name in ['*', self.name]:
-                for key, value in Variable.objects.filter(project=project, task_name=task_name):
+            for descriptor in ['*', self.descriptor]:
+                for key, value in Variable.objects.filter(project=project, descriptor=descriptor):
                     environment[key] = value
 
         # Add environment variables from the task configuration
