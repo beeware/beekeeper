@@ -354,7 +354,7 @@ class Build(models.Model):
                         status=Build.STATUS_DONE,
                         result=Build.RESULT_PASS,
                         created__lte=self.created
-                    ).latest('completed')
+                    ).latest('created')
         except Build.DoesNotExist:
             return None
 
