@@ -350,7 +350,7 @@ class Build(models.Model):
             # the most recent successful build on that change.
             return Build.objects.filter(
                         change__project=self.change.project,
-                        change__pull_request=self.pull_request,
+                        change__pull_request=self.change.pull_request,
                         status=Build.STATUS_DONE,
                         result=Build.RESULT_PASS,
                         created__lte=self.created
