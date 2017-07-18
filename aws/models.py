@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.timesince import timesince
 
-from projects.models import Build
+from projects.models import Build, Variable
 
 
 
@@ -166,10 +166,16 @@ class Task(models.Model):
             'TASK': self.slug.split(':')[-1],
         }
 
-        # Add environment variables from the project configuration
-        for task_name in ['*', self.name]:
-            for key, value in self.build.project.variables.filter(task_name=task_name):
-                environment[key] = value
+        # Add environment variables from the project configuration.
+        # Include, in order:
+        #  * Global variables for all tasks
+        #  * Global variables for a specific task
+        #  * Project variables for all tasks
+        #  * Project variables for a specific task
+        for project in [None, self.build.change.project]:
+            for task_name in ['*', self.name]:
+                for key, value in Variable.objects.filter(project=project, task_name=task_name):
+                    environment[key] = value
 
         # Add environment variables from the task configuration
         environment.update(self.environment)

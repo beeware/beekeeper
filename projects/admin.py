@@ -45,6 +45,14 @@ class ProjectAdmin(admin.ModelAdmin):
     inlines = [VariableInline]
 
 
+@admin.register(Variable)
+class VariableAdmin(admin.ModelAdmin):
+    model = Variable
+    list_display = ['project', 'task_name', 'key', 'value']
+    raw_id_fields = ['project']
+    extra = 0
+
+
 class BuildInline(admin.TabularInline):
     model = Build
     list_display = ['created', 'commit', 'status', 'result']
