@@ -169,10 +169,14 @@ def build_code(request, owner, repo_name, change_pk, build_pk):
     except Build.DoesNotExist:
         raise Http404
 
-    return HttpResponseRedirect('https://%s:%s@github.com/%s/%s/archive/%s.zip' % (
-                settings.GITHUB_USERNAME,
-                settings.GITHUB_ACCESS_TOKEN,
-                owner,
-                repo_name,
-                build.commit.sha
-            ))
+    response = requests.get(
+        'https://github.com/%s/%s/archive/%s.zip' % (
+            owner,
+            repo_name,
+            build.commit.sha
+        ),
+        auth=(settings.GITHUB_USERNAME, settings.GITHUB_ACCESS_TOKEN),
+        allow_redirects=False
+    )
+
+    return HttpResponseRedirect(response.headers['Location'])
