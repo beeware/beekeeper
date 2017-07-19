@@ -172,7 +172,7 @@ def build_code(request, owner, repo_name, change_pk, build_pk):
     return HttpResponseRedirect('https://%s:%s@github.com/%s/%s/archive/%s.zip' % (
                 settings.GITHUB_USERNAME,
                 settings.GITHUB_ACCESS_TOKEN,
-                repo_name,
                 owner,
+                repo_name,
                 build.commit.sha
             ))
