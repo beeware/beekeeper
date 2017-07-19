@@ -8,6 +8,8 @@ from django.shortcuts import render, redirect
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
 
+import requests
+
 from .models import Project, Change, Build
 
 
