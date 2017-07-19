@@ -171,7 +171,7 @@ class Task(models.Model):
             'GITHUB_OWNER': self.build.commit.repository.owner.login,
             'GITHUB_PROJECT_NAME': self.build.commit.repository.name,
             'GITHUB_PR_NUMBER': pr_number,
-            'CODE_URL': self.build.get_code_url(),
+            'CODE_URL': settings.BEEKEEPER_URL + self.build.get_code_url(),
             'LAST_SUCCESS_SHA': last_success_sha,
             'SHA': self.build.commit.sha,
             'TASK': self.slug.split(':')[-1],
