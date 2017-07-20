@@ -204,7 +204,8 @@ class Task(models.Model):
 
         if self.profile == 'hi-cpu':
             container_definition.update({
-                'cpu': 8192
+                'cpu': 8192,
+                'memory': 2048
             })
 
         response = ecs_client.run_task(
