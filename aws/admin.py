@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
 from django.utils.safestring import mark_safe
 
-from .models import Task
+from .models import Task, Profile
 
 
 @admin.register(Task)
@@ -17,3 +17,8 @@ class TaskAdmin(admin.ModelAdmin):
     def project(self, task):
         return task.build.change.project
     project.short_description = 'Project'
+
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ['slug', 'name', 'instance_type']

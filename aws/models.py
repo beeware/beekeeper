@@ -12,7 +12,6 @@ from django.utils.timesince import timesince
 from projects.models import Build, ProjectSetting
 
 
-
 class TaskQuerySet(models.QuerySet):
     def started(self):
         return self.filter(status__in=(
@@ -161,18 +160,11 @@ class Task(models.Model):
         else:
             pr_number = ''
 
-        prev_success = self.build.previous_success
-        if prev_success:
-            last_success_sha = prev_success.commit.sha
-        else:
-            last_success_sha = ''
-
         environment = {
             'GITHUB_OWNER': self.build.commit.repository.owner.login,
             'GITHUB_PROJECT_NAME': self.build.commit.repository.name,
             'GITHUB_PR_NUMBER': pr_number,
             'CODE_URL': settings.BEEKEEPER_URL + self.build.get_code_url(),
-            'LAST_SUCCESS_SHA': last_success_sha,
             'SHA': self.build.commit.sha,
             'TASK': self.slug.split(':')[-1],
         }
@@ -202,11 +194,15 @@ class Task(models.Model):
             ],
         }
 
-        if self.profile == 'hi-cpu':
+        profile_name = self.profile if self.profile else 'default'
+        try:
+            profile = Profile.objects.get(slug=profile_name)
             container_definition.update({
-                'cpu': 8192,
-                'memory': 2048
+                'cpu': profile.cpu,
+                'memory': profile.memory
             })
+        except Profile.DoesNotExist:
+            raise RuntimeError("Unable to find a '%s' profile - is it defined?" % profile_name)
 
         response = ecs_client.run_task(
             cluster=settings.AWS_ECS_CLUSTER_NAME,
@@ -223,21 +219,15 @@ class Task(models.Model):
             self.save()
         elif response['failures'][0]['reason'] in ['RESOURCE:CPU']:
             if self.status == Task.STATUS_CREATED:
-                print("Spawning new c4.2xlarge instance...")
-                ec2_client.run_instances(
-                    ImageId=settings.AWS_ECS_AMI,
-                    InstanceType='c4.2xlarge',
-                    MinCount=1,
-                    MaxCount=1,
-                    KeyName='rkm',
-                    SecurityGroupIds=settings.AWS_ECS_SECURITY_GROUP_IDS.split(':'),
-                    SubnetId=settings.AWS_ECS_SUBNET_ID,
-                    IamInstanceProfile={
-                        "Name": "ecsInstanceRole"
-                    },
-                    UserData="#!/bin/bash \n echo ECS_CLUSTER=%s >> /etc/ecs/ecs.config" % settings.AWS_ECS_CLUSTER_NAME
+                print("Spawning new %s instance..." % profile)
+                instance = profile.start_instance(
+                    key_name=settings.AWS_EC2_KEY_PAIR_NAME,
+                    security_groups=settings.AWS_ECS_SECURITY_GROUP_IDS.split(':'),
+                    subnet=settings.AWS_ECS_SUBNET_ID,
+                    cluster_name=settings.AWS_ECS_CLUSTER_NAME,
+                    ec2_client=ec2_client,
                 )
-
+                print("Created instance %s" % instance)
                 self.status = Task.STATUS_PENDING
                 self.pending = timezone.now()
                 self.save()
@@ -278,3 +268,86 @@ class Task(models.Model):
         response = gh_commit._post(url, payload)
         if not response.ok:
             raise GitHubError(response.reason)
+
+
+class Profile(models.Model):
+    EC2_TYPES = [
+        {'name': 't2.nano',     'vcpu': 1,  'ecu': None,  'mem': 0.5,   'price': 0.0059},
+        {'name': 't2.micro',    'vcpu': 1,  'ecu': None,  'mem': 1,     'price': 0.012},
+        {'name': 't2.small',    'vcpu': 1,  'ecu': None,  'mem': 2,     'price': 0.023},
+        {'name': 't2.medium',   'vcpu': 2,  'ecu': None,  'mem': 4,     'price': 0.047},
+        {'name': 't2.large',    'vcpu': 2,  'ecu': None,  'mem': 8,     'price': 0.094},
+        {'name': 't2.xlarge',   'vcpu': 4,  'ecu': None,  'mem': 16,    'price': 0.188},
+        {'name': 't2.2xlarge',  'vcpu': 8,  'ecu': None,  'mem': 32,    'price': 0.376},
+        {'name': 'm4.large',    'vcpu': 2,  'ecu': 6.5,   'mem': 8,     'price': 0.1},
+        {'name': 'm4.xlarge',   'vcpu': 4,  'ecu': 13,    'mem': 16,    'price': 0.2},
+        {'name': 'm4.2xlarge',  'vcpu': 8,  'ecu': 26,    'mem': 32,    'price': 0.4},
+        {'name': 'm4.4xlarge',  'vcpu': 16, 'ecu': 53.5,  'mem': 64,    'price': 0.8},
+        {'name': 'm4.10xlarge', 'vcpu': 40, 'ecu': 124.5, 'mem': 160,   'price': 2.0},
+        {'name': 'm4.16xlarge', 'vcpu': 64, 'ecu': 188,   'mem': 256,   'price': 3.2},
+        {'name': 'c4.large',    'vcpu': 2,  'ecu': 8,     'mem': 3.75,  'price': 0.1},
+        {'name': 'c4.xlarge',   'vcpu': 4,  'ecu': 16,    'mem': 7.5,   'price': 0.199},
+        {'name': 'c4.2xlarge',  'vcpu': 8,  'ecu': 31,    'mem': 15,    'price': 0.398},
+        {'name': 'c4.4xlarge',  'vcpu': 16, 'ecu': 62,    'mem': 30,    'price': 0.796},
+        {'name': 'c4.8xlarge',  'vcpu': 36, 'ecu': 132,   'mem': 60,    'price': 1.591},
+        {'name': 'p2.xlarge',   'vcpu': 4,  'ecu': 12,    'mem': 61,    'price': 0.9},
+        {'name': 'p2.8xlarge',  'vcpu': 32, 'ecu': 94,    'mem': 488,   'price': 7.2},
+        {'name': 'p2.16xlarge', 'vcpu': 64, 'ecu': 188,   'mem': 732,   'price': 14.4},
+        {'name': 'g3.4xlarge',  'vcpu': 16, 'ecu': 47,    'mem': 122,   'price': 1.14},
+        {'name': 'g3.8xlarge',  'vcpu': 32, 'ecu': 94,    'mem': 244,   'price': 2.28},
+        {'name': 'g3.16xlarge', 'vcpu': 64, 'ecu': 188,   'mem': 488,   'price': 4.56},
+        {'name': 'r4.large',    'vcpu': 2,  'ecu': 7,     'mem': 15.25, 'price': 0.133},
+        {'name': 'r4.xlarge',   'vcpu': 4,  'ecu': 13.5,  'mem': 30.5,  'price': 0.266},
+        {'name': 'r4.2xlarge',  'vcpu': 8,  'ecu': 27,    'mem': 61,    'price': 0.532},
+        {'name': 'r4.4xlarge',  'vcpu': 16, 'ecu': 53,    'mem': 122,   'price': 1.064},
+        {'name': 'r4.8xlarge',  'vcpu': 32, 'ecu': 99,    'mem': 244,   'price': 2.128},
+        {'name': 'r4.16xlarge', 'vcpu': 64, 'ecu': 195,   'mem': 488,   'price': 4.256},
+    ]
+
+    INSTANCE_TYPE_CHOICES = [
+        (ec2['name'], ec2['name'])
+        for ec2 in EC2_TYPES
+    ]
+
+    name = models.CharField(max_length=100)
+    slug = models.CharField(max_length=100, db_index=True)
+
+    instance_type = models.CharField(max_length=20, choices=INSTANCE_TYPE_CHOICES)
+    cpu = models.IntegerField(default=0)
+    memory = models.IntegerField(default=0)
+    ami = models.CharField(max_length=100, default='ami-57d9cd2e')
+
+    idle = models.IntegerField(default=60)
+
+    class Meta:
+        ordering = ('slug',)
+
+    def __str__(self):
+        return self.name
+
+    def start_instance(self, key_name, security_groups, subnet, cluster_name, aws_session=None, ec2_client=None):
+        if ec2_client is None:
+            if aws_session is None:
+                aws_session = boto3.session.Session(
+                    region_name=settings.AWS_REGION,
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                )
+
+            ec2_client = aws_session.client('ec2')
+
+        response = ec2_client.run_instances(
+            ImageId=self.ami,
+            InstanceType=self.instance_type,
+            MinCount=1,
+            MaxCount=1,
+            KeyName=key_name,
+            SecurityGroupIds=security_groups,
+            SubnetId=subnet,
+            IamInstanceProfile={
+                "Name": "ecsInstanceRole"
+            },
+            UserData="#!/bin/bash \n echo ECS_CLUSTER=%s >> /etc/ecs/ecs.config" % cluster_name
+        )
+
+        return response['Instances'][0]['InstanceId']
