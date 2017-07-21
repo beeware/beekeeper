@@ -343,9 +343,6 @@ def sweeper(self, task_pk):
 
     if task.is_finished:
         profile = task.profile
-        print("updated %s, cooldown %s, now %s, cooldown at %s" % (
-            task.updated, profile.cooldown, timezone.now(), timezone.now() + timedelta(seconds=profile.cooldown)
-        ))
         if task.updated + timedelta(seconds=profile.cooldown) < timezone.now():
             print("Task %s:%s has exceeded cooldown period." % (
                 task.build, task
@@ -368,7 +365,7 @@ def sweeper(self, task_pk):
                             ))
                     else:
                         print("%s has been used recently (most recently by %s:%s)." % (
-                            task.build, task, instance
+                            instance, task.build, task
                         ))
             else:
                 print("None of the instances associated with %s:%s are still active." % (

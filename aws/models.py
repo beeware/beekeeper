@@ -457,7 +457,7 @@ class Instance(models.Model):
             ec2_client.terminate_instances(InstanceIds=[self.ec2_id])
 
             # Save the new state of the instance.
-            self.terminated = True
+            self.terminated = timezone.now()
             self.active = False
             self.save()
             return True
