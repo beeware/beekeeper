@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
 from django.utils.safestring import mark_safe
 
-from .models import Task, Profile
+from .models import Task, Profile, Instance
 
 
 @admin.register(Task)
@@ -22,3 +22,10 @@ class TaskAdmin(admin.ModelAdmin):
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ['slug', 'name', 'instance_type']
+
+
+@admin.register(Instance)
+class InstanceAdmin(admin.ModelAdmin):
+    list_display = ['profile', 'ec2_id', 'container_arn', 'created', 'active']
+    list_filter = ['active']
+    raw_id_fields = ['tasks']
