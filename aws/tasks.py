@@ -346,7 +346,7 @@ def sweeper(self, task_pk):
         print("updated %s, cooldown %s, now %s, cooldown at %s" % (
             task.updated, profile.cooldown, timezone.now(), timezone.now() + timedelta(seconds=profile.cooldown)
         ))
-        if task.updated > timezone.now() + timedelta(seconds=profile.cooldown):
+        if task.updated + timedelta(seconds=profile.cooldown) < timezone.now():
             print("Task %s:%s has exceeded cooldown period." % (
                 task.build, task
             ))
@@ -403,10 +403,7 @@ def reaper(self, task_pk):
         print("Task %s:%s has finished.")
     else:
         profile = task.profile
-        print("started %s, timeout %s, now %s, timeout at %s" % (
-            task.started, profile.timeout, timezone.now(), task.started + timedelta(seconds=profile.timeout)
-        ))
-        if task.started + timedelta(seconds=profile.timeout) > timezone.now():
+        if task.started + timedelta(seconds=profile.timeout) < timezone.now():
             print("Task %s:%s has exceeded maximum duration for profile %s; terminating" % (
                 task.build, task, profile
             ))
