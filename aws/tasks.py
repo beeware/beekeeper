@@ -16,7 +16,7 @@ from projects.models import Change, Build
 from aws.models import Task
 
 
-def task_configs(config):
+def load_task_configs(config):
     task_data = []
     for phase, phase_configs in enumerate(config):
         for phase_name, phase_config in phase_configs.items():
@@ -88,7 +88,7 @@ def create_tasks(gh_repo, build):
         phases = config.get('push', [])
 
     # Parse the phase configuration and create tasks
-    for task_config in task_configs(phases):
+    for task_config in load_task_configs(phases):
         print("Created phase %(phase)s task %(name)s" % task_config)
         task = Task.objects.create(
             build=build,
@@ -99,7 +99,7 @@ def create_tasks(gh_repo, build):
 
 def on_check_build_failure(self, exc, task_id, args, kwargs, einfo):
     build = Build.objects.get(pk=args[0])
-    print("Error in build %s: %s" % (build, str(exc)))
+    print("Error checking build %s: %s" % (build, str(exc)))
     build.status = Build.STATUS_ERROR
     build.error = str(exc)
     build.save()
@@ -285,7 +285,7 @@ def check_build(self, build_pk):
         if running_tasks:
             print("There are %s active tasks." % running_tasks.count())
             for task in running_tasks:
-                task.stop(ecs_client)
+                task.stop(ecs_client=ecs_client)
         elif stopping_tasks:
             response = ecs_client.describe_tasks(
                  cluster=settings.AWS_ECS_CLUSTER_NAME,
@@ -317,3 +317,89 @@ def check_build(self, build_pk):
         check_build.apply_async((build_pk,), countdown=5)
 
     print("Build check complete.")
+
+
+def on_sweeper_failure(self, exc, task_id, args, kwargs, einfo):
+    task = Task.objects.get(pk=args[0])
+    print("Error sweeping task %s:%s: %s" % (task.build, task, str(exc)))
+    task.status = Task.STATUS_ERROR
+    task.save()
+
+
+@app.task(
+    bind=True,
+    on_failure=on_sweeper_failure
+)
+def sweeper(self, task_pk):
+    task = Task.objects.get(pk=task_pk)
+    print("Sweeping %s:%s..." % (task.build, task))
+
+    aws_session = boto3.session.Session(
+        region_name=settings.AWS_REGION,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    )
+    ec2_client = aws_session.client('ec2')
+
+    if task.is_finished and task.updated > timezone.now() + timedelta(seconds=task.profile.cooldown):
+        print("Task %s:%s has exceeded cooldown period." % (
+            task.build, task
+        ))
+        active_instances = task.instances.active()
+        if active_instances:
+            for instance in active_instances:
+                print("Checking %s for activity..." % instance)
+                most_recent_task = instance.tasks.latest('updated')
+                if task == most_recent_task:
+                    print("Task %s:%s is the most recent task on %s; consider terminating instance." % (
+                        task.build, task, instance
+                    ))
+                    terminated = instance.terminate(ec2_client=ec2_client)
+                    if terminated:
+                        print("Instance %s terminated." % instance)
+                    else:
+                        print("Need to preserve %s %s instances; not terminating %s." % (
+                            instance.profile.min_instances, instance.profile, instance
+                        ))
+                else:
+                    print("%s has been used recently (most recently by %s:%s)." % (
+                        task.build, task, instance
+                    ))
+        else:
+            print("None of the instances associated with %s:%s are still active." % (
+                task.build, task
+            ))
+    else:
+        print("Task %s:%s has been updated (possibly restarted). No sweeping required." % (
+            task.build, task
+        ))
+
+
+def on_reaper_failure(self, exc, task_id, args, kwargs, einfo):
+    task = Task.objects.get(pk=args[0])
+    print("Error reaping task %s:%s: %s" % (task.build, task, str(exc)))
+    task.status = Build.STATUS_ERROR
+    task.save()
+
+
+@app.task(
+    bind=True,
+    on_failure=on_reaper_failure
+)
+def reaper(self, task_pk):
+    task = Task.objects.get(pk=task_pk)
+    print("Checking %s:%s has finished..." % (task.build, task))
+
+    if task.is_finished:
+        print("Task %s:%s has fininshed.")
+    else:
+        if task.started + timedelta(seconds=task.profile.timeout) > timezone.now():
+            print("Task %s:%s has exceeded maximum duration for profile %s; terminating" % (
+                task.build, task, task.profile
+            ))
+            task.stop()
+        else:
+            print("Task %s:%s has been restarted." % (
+                task.build, task
+            ))
+

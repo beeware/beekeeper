@@ -97,6 +97,15 @@ class Task(models.Model):
         ordering = ('phase', 'name',)
         unique_together = [('build', 'slug')]
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # If this task finishes, is stopped, or errors out,
+        # start the timer on the sweeper to shut down the instance
+        # used to run it.
+        if self.is_finished:
+            from .tasks import sweeper
+            sweeper.apply_async((str(task.pk),), timeout=task.profile.cooldown)
+
     def get_absolute_url(self):
         return reverse('projects:task', kwargs={
                     'owner': self.build.change.project.repository.owner.login,
@@ -212,6 +221,32 @@ class Task(models.Model):
             }
         )
         if response['tasks']:
+            container_arn = response['tasks'][0]['containerInstanceArn']
+
+            try:
+                instance = Instance.objects.get(profile=profile, container_arn=container_arn)
+                print("Task deployed on container %s." % container_arn)
+            except Instance.DoesNotExist:
+                print("Task deployed on container %s..." % container_arn)
+                try:
+                    ec2_id = ecs_client.describe_container_instances(
+                            cluster=settings.AWS_ECS_CLUSTER_NAME,
+                            containerInstances=[container_arn]
+                        )['containerInstances']['ec2InstanceId']
+                    print("Container %s is on EC2 instance %s." % (container_arn, ec2_id))
+                    instance = Instance.objects.get(profile=profile, ec2_id=ec2_id)
+                    instance.container_arn = container_arn
+                except Instance.DoesNotExist:
+                    print("EC2 instance %s must be new. Recording instance.")
+                    instance = Instance(profile=profile, ec2_id=ec2_id)
+
+            instance.save()
+            instance.tasks.add(self)
+
+            # Add the timeout reaper task
+            from .tasks import reaper
+            reaper.apply_async((str(task.pk),), timeout=task.profile.timeout)
+
             self.arn = response['tasks'][0]['taskArn']
             self.status = Task.STATUS_PENDING
             self.pending = timezone.now()
@@ -227,14 +262,27 @@ class Task(models.Model):
                     cluster_name=settings.AWS_ECS_CLUSTER_NAME,
                     ec2_client=ec2_client,
                 )
-                print("Created instance %s" % instance)
-                self.status = Task.STATUS_PENDING
+                if instance:
+                    print("Created instance %s" % instance)
+                    self.status = Task.STATUS_PENDING
+                else:
+                    print("Maximum number of %s instances reached. Waiting for spare capacity..." % profile)
                 self.pending = timezone.now()
                 self.save()
         else:
             raise RuntimeError('Unable to start worker: %s' % response['failures'][0]['reason'])
 
-    def stop(self, ecs_client):
+    def stop(self, aws_client=None, ecs_client=None):
+        if ecs_client is None:
+            if aws_session is None:
+                aws_session = boto3.session.Session(
+                    region_name=settings.AWS_REGION,
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                )
+
+            ecs_client = aws_session.client('ecs')
+
         response = ecs_client.stop_task(
             cluster=settings.AWS_ECS_CLUSTER_NAME,
             task=self.arn
@@ -272,6 +320,7 @@ class Task(models.Model):
 
 class Profile(models.Model):
     EC2_TYPES = [
+        # Price is US price, as of 20 July 2017
         {'name': 't2.nano',     'vcpu': 1,  'ecu': None,  'mem': 0.5,   'price': 0.0059},
         {'name': 't2.micro',    'vcpu': 1,  'ecu': None,  'mem': 1,     'price': 0.012},
         {'name': 't2.small',    'vcpu': 1,  'ecu': None,  'mem': 2,     'price': 0.023},
@@ -315,9 +364,13 @@ class Profile(models.Model):
     instance_type = models.CharField(max_length=20, choices=INSTANCE_TYPE_CHOICES)
     cpu = models.IntegerField(default=0)
     memory = models.IntegerField(default=0)
-    ami = models.CharField(max_length=100, default='ami-57d9cd2e')
+    ami = models.CharField('AMI', max_length=100, default='ami-57d9cd2e')
 
-    idle = models.IntegerField(default=60)
+    timeout = models.IntegerField(default=60 * 60)
+    cooldown = models.IntegerField(default=60)
+
+    max_instances = models.IntegerField(null=True, blank=True)
+    min_instances = models.IntegerField(default=0)
 
     class Meta:
         ordering = ('slug',)
@@ -336,18 +389,72 @@ class Profile(models.Model):
 
             ec2_client = aws_session.client('ec2')
 
-        response = ec2_client.run_instances(
-            ImageId=self.ami,
-            InstanceType=self.instance_type,
-            MinCount=1,
-            MaxCount=1,
-            KeyName=key_name,
-            SecurityGroupIds=security_groups,
-            SubnetId=subnet,
-            IamInstanceProfile={
-                "Name": "ecsInstanceRole"
-            },
-            UserData="#!/bin/bash \n echo ECS_CLUSTER=%s >> /etc/ecs/ecs.config" % cluster_name
-        )
+        if self.max_instances is None or self.instances.active().count() < self.max_instances:
+            response = ec2_client.run_instances(
+                ImageId=self.ami,
+                InstanceType=self.instance_type,
+                MinCount=1,
+                MaxCount=1,
+                KeyName=key_name,
+                SecurityGroupIds=security_groups,
+                SubnetId=subnet,
+                IamInstanceProfile={
+                    "Name": "ecsInstanceRole"
+                },
+                UserData="#!/bin/bash \n echo ECS_CLUSTER=%s >> /etc/ecs/ecs.config" % cluster_name
+            )
 
-        return response['Instances'][0]['InstanceId']
+            # Create a database record of the instance.
+            instance = Instance.objects.create(
+                            profile=self,
+                            ec2_id=response['Instances'][0]['InstanceId']
+                        )
+        else:
+            instance = None
+
+        return instance
+
+class InstanceQuerySet(models.QuerySet):
+    def active(self):
+        return self.filter(active=True)
+
+
+class Instance(models.Model):
+    objects = InstanceQuerySet.as_manager()
+
+    profile = models.ForeignKey(Profile, related_name='instances')
+    container_arn = models.CharField(max_length=100, null=True, blank=True, db_index=True)
+    ec2_id = models.CharField(max_length=100, db_index=True)
+
+    tasks = models.ManyToManyField(Task, blank=True)
+
+    created = models.DateTimeField(default=timezone.now)
+    checked = models.DateTimeField(auto_now=True)
+    terminated = models.DateTimeField(null=True, blank=True)
+
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return 'Container %s (EC2 ID %s)' % (self.container_arn, self.ec2_id)
+
+    def terminate(self, aws_session=None, ec2_client=None):
+        if ec2_client is None:
+            if aws_session is None:
+                aws_session = boto3.session.Session(
+                    region_name=settings.AWS_REGION,
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                )
+
+            ec2_client = aws_session.client('ec2')
+
+        if self.profile.instances.count() > self.profile.min_instances:
+            ec2_client.terminate_instances(InstanceIds=[self.ec2_id])
+
+            # Save the new state of the instance.
+            self.terminated = True
+            self.active = False
+            self.save()
+            return True
+        else:
+            return False
