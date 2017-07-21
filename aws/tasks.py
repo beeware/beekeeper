@@ -332,6 +332,12 @@ def on_sweeper_failure(self, exc, task_id, args, kwargs, einfo):
 )
 def sweeper(self, task_pk):
     task = Task.objects.get(pk=task_pk)
+    try:
+        task = Task.objects.get(pk=task_pk)
+    except Task.DoesNotExist:
+        print("Task %s appears to have been purged; nothing to sweep." % task_pk)
+        return
+
     print("Sweeping %s:%s..." % (task.build, task))
 
     aws_session = boto3.session.Session(
@@ -393,7 +399,12 @@ def on_reaper_failure(self, exc, task_id, args, kwargs, einfo):
     on_failure=on_reaper_failure
 )
 def reaper(self, task_pk):
-    task = Task.objects.get(pk=task_pk)
+    try:
+        task = Task.objects.get(pk=task_pk)
+    except Task.DoesNotExist:
+        print("Task %s appears to have been purged; nothing to reap." % task_pk)
+        return
+
     print("Checking if %s:%s has finished..." % (task.build, task))
 
     if task.is_finished:
