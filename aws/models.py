@@ -1,4 +1,5 @@
 import uuid
+import boto3
 
 from github3.exceptions import GitHubError
 
