@@ -53,7 +53,7 @@ def load_task_configs(config):
                             'phase': phase,
                             'is_critical': task_config.get('critical', True),
                             'environment': task_env,
-                            'profile': task_profile,
+                            'profile_slug': task_profile,
                             'descriptor': descriptor,
                         })
 
@@ -64,7 +64,7 @@ def load_task_configs(config):
                     'phase': phase,
                     'is_critical': phase_config.get('critical', True),
                     'environment': phase_config.get('environment', {}),
-                    'profile': phase_config.get('profile'),
+                    'profile_slug': phase_config.get('profile'),
                     'descriptor': phase_config['task'],
                 })
             else:
@@ -393,9 +393,10 @@ def reaper(self, task_pk):
     if task.is_finished:
         print("Task %s:%s has fininshed.")
     else:
-        if task.started + timedelta(seconds=task.profile.timeout) > timezone.now():
+        profile = task.profile
+        if task.started + timedelta(seconds=profile.timeout) > timezone.now():
             print("Task %s:%s has exceeded maximum duration for profile %s; terminating" % (
-                task.build, task, task.profile
+                task.build, task, profile
             ))
             task.stop()
         else:

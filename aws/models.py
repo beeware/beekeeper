@@ -87,7 +87,7 @@ class Task(models.Model):
     completed = models.DateTimeField(null=True, blank=True)
 
     environment = postgres.JSONField()
-    profile = models.CharField(max_length=100, null=True)
+    profile_slug = models.CharField(max_length=100, default='default')
     descriptor = models.CharField(max_length=100)
     arn = models.CharField(max_length=100, null=True, blank=True)
 
@@ -104,7 +104,7 @@ class Task(models.Model):
         # used to run it.
         if self.is_finished:
             from .tasks import sweeper
-            sweeper.apply_async((str(task.pk),), timeout=task.profile.cooldown)
+            sweeper.apply_async((str(self.pk),), timeout=self.profile.cooldown)
 
     def get_absolute_url(self):
         return reverse('projects:task', kwargs={
@@ -152,6 +152,10 @@ class Task(models.Model):
         return '%s/%s/%s' % (
             self.descriptor, self.descriptor, self.arn.rsplit('/', 1)[1]
         )
+
+    @property
+    def profile(self):
+        return Profile.objects.get(slug=self.profile_slug)
 
     def full_status_display(self):
         if self.status == Task.STATUS_ERROR:
@@ -203,15 +207,15 @@ class Task(models.Model):
             ],
         }
 
-        profile_name = self.profile if self.profile else 'default'
         try:
-            profile = Profile.objects.get(slug=profile_name)
-            container_definition.update({
-                'cpu': profile.cpu,
-                'memory': profile.memory
-            })
+            profile = self.profile
         except Profile.DoesNotExist:
             raise RuntimeError("Unable to find a '%s' profile - is it defined?" % profile_name)
+
+        container_definition.update({
+            'cpu': profile.cpu,
+            'memory': profile.memory
+        })
 
         response = ecs_client.run_task(
             cluster=settings.AWS_ECS_CLUSTER_NAME,
@@ -245,7 +249,7 @@ class Task(models.Model):
 
             # Add the timeout reaper task
             from .tasks import reaper
-            reaper.apply_async((str(task.pk),), timeout=task.profile.timeout)
+            reaper.apply_async((str(self.pk),), timeout=profile.timeout)
 
             self.arn = response['tasks'][0]['taskArn']
             self.status = Task.STATUS_PENDING
