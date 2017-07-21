@@ -232,7 +232,7 @@ class Task(models.Model):
                     ec2_id = ecs_client.describe_container_instances(
                             cluster=settings.AWS_ECS_CLUSTER_NAME,
                             containerInstances=[container_arn]
-                        )['containerInstances']['ec2InstanceId']
+                        )['containerInstances'][0]['ec2InstanceId']
                     print("Container %s is on EC2 instance %s." % (container_arn, ec2_id))
                     instance = Instance.objects.get(profile=profile, ec2_id=ec2_id)
                     instance.container_arn = container_arn
