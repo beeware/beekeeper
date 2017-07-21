@@ -408,7 +408,7 @@ def reaper(self, task_pk):
     print("Checking if %s:%s has finished..." % (task.build, task))
 
     if task.is_finished:
-        print("Task %s:%s has finished.")
+        print("Task %s:%s has finished." % (task.build, task))
     else:
         profile = task.profile
         if task.started + timedelta(seconds=profile.timeout) < timezone.now():
