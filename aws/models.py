@@ -105,7 +105,7 @@ class Task(models.Model):
         # used to run it.
         if self.is_finished:
             from .tasks import sweeper
-            print("SWEEPER TIMEOUT" % self.profile.cooldown)
+            print("SWEEPER TIMEOUT", self.profile.cooldown)
             sweeper.apply_async((str(self.pk),), timeout=self.profile.cooldown)
 
     def get_absolute_url(self):
@@ -251,7 +251,7 @@ class Task(models.Model):
 
             # Add the timeout reaper task
             from .tasks import reaper
-            print("REAPER TIMEOUT" % profile.timeout)
+            print("REAPER TIMEOUT", profile.timeout)
             reaper.apply_async((str(self.pk),), timeout=profile.timeout)
 
             self.arn = response['tasks'][0]['taskArn']
