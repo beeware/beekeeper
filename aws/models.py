@@ -431,7 +431,7 @@ class Instance(models.Model):
     container_arn = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     ec2_id = models.CharField(max_length=100, db_index=True)
 
-    tasks = models.ManyToManyField(Task, blank=True)
+    tasks = models.ManyToManyField(Task, related_name='instances', blank=True)
 
     created = models.DateTimeField(default=timezone.now)
     checked = models.DateTimeField(auto_now=True)
