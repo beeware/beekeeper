@@ -341,32 +341,41 @@ def sweeper(self, task_pk):
     )
     ec2_client = aws_session.client('ec2')
 
-    if task.is_finished and task.updated > timezone.now() + timedelta(seconds=task.profile.cooldown):
-        print("Task %s:%s has exceeded cooldown period." % (
-            task.build, task
+    if task.is_finished:
+        profile = task.profile
+        print("updated %s, cooldown %s, now %s, cooldown at %s" % (
+            task.updated, profile.cooldown, timezone.now(), timezone.now() + timedelta(seconds=profile.cooldown)
         ))
-        active_instances = task.instances.active()
-        if active_instances:
-            for instance in active_instances:
-                print("Checking %s for activity..." % instance)
-                most_recent_task = instance.tasks.latest('updated')
-                if task == most_recent_task:
-                    print("Task %s:%s is the most recent task on %s; consider terminating instance." % (
-                        task.build, task, instance
-                    ))
-                    terminated = instance.terminate(ec2_client=ec2_client)
-                    if terminated:
-                        print("Instance %s terminated." % instance)
-                    else:
-                        print("Need to preserve %s %s instances; not terminating %s." % (
-                            instance.profile.min_instances, instance.profile, instance
+        if task.updated > timezone.now() + timedelta(seconds=profile.cooldown):
+            print("Task %s:%s has exceeded cooldown period." % (
+                task.build, task
+            ))
+            active_instances = task.instances.active()
+            if active_instances:
+                for instance in active_instances:
+                    print("Checking %s for activity..." % instance)
+                    most_recent_task = instance.tasks.latest('updated')
+                    if task == most_recent_task:
+                        print("Task %s:%s is the most recent task on %s; consider terminating instance." % (
+                            task.build, task, instance
                         ))
-                else:
-                    print("%s has been used recently (most recently by %s:%s)." % (
-                        task.build, task, instance
-                    ))
+                        terminated = instance.terminate(ec2_client=ec2_client)
+                        if terminated:
+                            print("Instance %s terminated." % instance)
+                        else:
+                            print("Need to preserve %s %s instances; not terminating %s." % (
+                                instance.profile.min_instances, instance.profile, instance
+                            ))
+                    else:
+                        print("%s has been used recently (most recently by %s:%s)." % (
+                            task.build, task, instance
+                        ))
+            else:
+                print("None of the instances associated with %s:%s are still active." % (
+                    task.build, task
+                ))
         else:
-            print("None of the instances associated with %s:%s are still active." % (
+            print("Task %s:%s has been updated (possibly restarted and re-finished). No sweeping required." % (
                 task.build, task
             ))
     else:
@@ -388,12 +397,15 @@ def on_reaper_failure(self, exc, task_id, args, kwargs, einfo):
 )
 def reaper(self, task_pk):
     task = Task.objects.get(pk=task_pk)
-    print("Checking %s:%s has finished..." % (task.build, task))
+    print("Checking if %s:%s has finished..." % (task.build, task))
 
     if task.is_finished:
-        print("Task %s:%s has fininshed.")
+        print("Task %s:%s has finished.")
     else:
         profile = task.profile
+        print("started %s, timeout %s, now %s, timeout at %s" % (
+            task.started, profile.timeout, timezone.now(), task.started + timedelta(seconds=profile.timeout)
+        ))
         if task.started + timedelta(seconds=profile.timeout) > timezone.now():
             print("Task %s:%s has exceeded maximum duration for profile %s; terminating" % (
                 task.build, task, profile
