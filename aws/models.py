@@ -165,6 +165,8 @@ class Task(models.Model):
             return "Pending (for %s)" % timesince(self.pending)
         elif self.status == Task.STATUS_RUNNING:
             return "Running (for %s)" % timesince(self.started)
+        elif self.status == Task.STATUS_DONE:
+            return "Done (Task took %s)" % timesince(self.started)
         else:
             return self.get_status_display()
 
