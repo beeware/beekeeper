@@ -246,7 +246,7 @@ class BuildQuerySet(models.QuerySet):
 
 class Build(models.Model):
     STATUS_CREATED = 10
-    STATUS_PENDING = 19
+    STATUS_WAITING = 19
     STATUS_RUNNING = 20
     STATUS_DONE = 100
     STATUS_ERROR = 200
@@ -255,7 +255,7 @@ class Build(models.Model):
 
     STATUS_CHOICES = [
         (STATUS_CREATED, 'Created'),
-        # No PENDING state for builds.
+        # No WAITING state for builds.
         (STATUS_RUNNING, 'Running'),
         (STATUS_DONE, 'Done'),
         (STATUS_ERROR, 'Error'),

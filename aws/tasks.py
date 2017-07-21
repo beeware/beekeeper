@@ -157,21 +157,15 @@ def check_build(self, build_pk):
             print("There are %s active tasks." % started_tasks.count())
             # Only check the *running* tasks - the ones where we have an ARN
             running_arns = [task.arn for task in started_tasks if task.arn]
-            pending_tasks = [task for task in started_tasks if task.arn is None]
+            waiting_tasks = [task for task in started_tasks if task.arn is None]
 
-            if pending_tasks:
-                for task in pending_tasks:
-                    print('Task %s: pending for %s' % (
-                        task, timesince(task.pending)
+            if waiting_tasks:
+                for task in waiting_tasks:
+                    print('Task %s: waiting for %s' % (
+                        task, timesince(task.queued)
                     ))
-                    if timezone.now() - task.pending < timedelta(seconds=300):
-                        print('   Trying to start again...')
-                        task.start(ecs_client, ec2_client)
-                    else:
-                        print('   Killing task...')
-                        task.status = Task.STATUS_ERROR
-                        task.error = "Timeout waiting for task to start."
-                        task.save()
+                    print('   Trying to start again...')
+                    task.start(ecs_client, ec2_client)
 
             if running_arns:
                 response = ecs_client.describe_tasks(

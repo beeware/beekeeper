@@ -16,19 +16,19 @@ from projects.models import Build, ProjectSetting
 class TaskQuerySet(models.QuerySet):
     def started(self):
         return self.filter(status__in=(
-                    Task.STATUS_PENDING,
+                    Task.STATUS_WAITING,
                     Task.STATUS_RUNNING,
                 ))
 
     def not_finished(self):
         return self.filter(status__in=(
-                    Task.STATUS_PENDING,
+                    Task.STATUS_WAITING,
                     Task.STATUS_RUNNING,
                     Task.STATUS_STOPPING,
                 ))
 
-    def pending(self):
-        return self.filter(status=Task.STATUS_PENDING)
+    def waiting(self):
+        return self.filter(status=Task.STATUS_WAITING)
 
     def running(self):
         return self.filter(status=Task.STATUS_RUNNING)
@@ -55,7 +55,7 @@ class TaskQuerySet(models.QuerySet):
 
 class Task(models.Model):
     STATUS_CREATED = Build.STATUS_CREATED
-    STATUS_PENDING = Build.STATUS_PENDING
+    STATUS_WAITING = Build.STATUS_WAITING
     STATUS_RUNNING = Build.STATUS_RUNNING
     STATUS_DONE = Build.STATUS_DONE
     STATUS_ERROR = Build.STATUS_ERROR
@@ -64,7 +64,7 @@ class Task(models.Model):
 
     STATUS_CHOICES = [
         (STATUS_CREATED, 'Created'),
-        (STATUS_PENDING, 'Pending'),
+        (STATUS_WAITING, 'Waiting'),
         (STATUS_RUNNING, 'Running'),
         (STATUS_DONE, 'Done'),
         (STATUS_ERROR, 'Error'),
@@ -82,8 +82,8 @@ class Task(models.Model):
 
     phase = models.IntegerField()
     is_critical = models.BooleanField()
+    queued = models.DateTimeField(null=True, blank=True)
     started = models.DateTimeField(null=True, blank=True)
-    pending = models.DateTimeField(null=True, blank=True)
     updated = models.DateTimeField(auto_now=True)
     completed = models.DateTimeField(null=True, blank=True)
 
@@ -161,12 +161,12 @@ class Task(models.Model):
     def full_status_display(self):
         if self.status == Task.STATUS_ERROR:
             return "Error: %s" % self.error
-        elif self.status == Task.STATUS_PENDING:
-            return "Pending (for %s)" % timesince(self.pending)
+        elif self.status == Task.STATUS_WAITING:
+            return "Waiting (for %s)" % timesince(self.queued)
         elif self.status == Task.STATUS_RUNNING:
             return "Running (for %s)" % timesince(self.started)
         elif self.status == Task.STATUS_DONE:
-            return "Done (Task took %s)" % timesince(self.started)
+            return "Done (Task took %s)" % timesince(self.started, now=self.completed)
         else:
             return self.get_status_display()
 
@@ -255,8 +255,9 @@ class Task(models.Model):
             reaper.apply_async((str(self.pk),), countdown=profile.timeout)
 
             self.arn = response['tasks'][0]['taskArn']
-            self.status = Task.STATUS_PENDING
-            self.pending = timezone.now()
+            self.status = Task.STATUS_WAITING
+            if self.queued is None:
+                self.queued = timezone.now()
             self.started = timezone.now()
             self.save()
         elif response['failures'][0]['reason'] in ['RESOURCE:CPU']:
@@ -271,10 +272,10 @@ class Task(models.Model):
                 )
                 if instance:
                     print("Created instance %s" % instance)
-                    self.status = Task.STATUS_PENDING
                 else:
                     print("Maximum number of %s instances reached. Waiting for spare capacity..." % profile)
-                self.pending = timezone.now()
+                self.status = Task.STATUS_WAITING
+                self.queued = timezone.now()
                 self.save()
         else:
             raise RuntimeError('Unable to start worker: %s' % response['failures'][0]['reason'])
