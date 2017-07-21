@@ -276,7 +276,7 @@ class Task(models.Model):
         else:
             raise RuntimeError('Unable to start worker: %s' % response['failures'][0]['reason'])
 
-    def stop(self, aws_client=None, ecs_client=None):
+    def stop(self, aws_session=None, ecs_client=None):
         if ecs_client is None:
             if aws_session is None:
                 aws_session = boto3.session.Session(
