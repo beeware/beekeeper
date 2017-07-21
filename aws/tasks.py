@@ -40,12 +40,12 @@ def load_task_configs(config):
                         task_env = phase_config.get('environment', {}).copy()
                         if task_config:
                             task_env.update(task_config.get('environment', {}))
-                            task_profile = task_config.get('profile', phase_config.get('profile'))
+                            task_profile = task_config.get('profile', phase_config.get('profile', 'default'))
 
                             full_name = task_config.get('name', task_name)
                         else:
                             full_name = task_name
-                            task_profile = None
+                            task_profile = 'default'
 
                         task_data.append({
                             'name': full_name,
@@ -64,7 +64,7 @@ def load_task_configs(config):
                     'phase': phase,
                     'is_critical': phase_config.get('critical', True),
                     'environment': phase_config.get('environment', {}),
-                    'profile_slug': phase_config.get('profile'),
+                    'profile_slug': phase_config.get('profile', 'default'),
                     'descriptor': phase_config['task'],
                 })
             else:
