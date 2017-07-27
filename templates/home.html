@@ -7,8 +7,7 @@
         <thead>
             <tr>
                 <th>Project</th>
-                <th># Open changes</th>
-                <th># Pending builds</th>
+                <th class="minimal"># Open changes</th>
                 <th></th>
             </tr>
         </thead>
@@ -16,8 +15,7 @@
     {% for project in projects %}
             <tr>
                 <td><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar"><a href="{{ project.get_absolute_url }}">{{ project.repository.full_name }}</a></td>
-                <td>{{ project.changes.active.count }}</td>
-                <td>{{ project.builds.pending.count }}</td>
+                <td class="minimal">{{ project.changes.active.count }}</td>
                 <td class="minimal"><a href="{{ project.repository.html_url }}"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></td>
             </tr>
     {% endfor %}
