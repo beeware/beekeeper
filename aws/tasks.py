@@ -365,7 +365,7 @@ def sweeper(self, task_pk):
                             ))
                     else:
                         print("%s has been used recently (most recently by %s:%s)." % (
-                            instance, task.build, task
+                            instance, most_recent_task.build, most_recent_task
                         ))
             else:
                 print("None of the instances associated with %s:%s are still active." % (
