@@ -8,24 +8,21 @@ from .models import Project, ProjectSetting, Change, Build
 
 def approve(modeladmin, request, queryset):
     for obj in queryset:
-        obj.status = obj.approve()
-        obj.save()
+        obj.approve()
         messages.info(request, 'Approving %s for build' % obj)
 approve.short_description = "Approve for build"
 
 
 def attic(modeladmin, request, queryset):
     for obj in queryset:
-        obj.status = obj.complete()
-        obj.save()
+        obj.complete()
         messages.info(request, 'Moving %s to the attic' % obj)
 attic.short_description = "Move to attic"
 
 
 def ignore(modeladmin, request, queryset):
     for obj in queryset:
-        obj.status = obj.ignore()
-        obj.save()
+        obj.ignore()
         messages.info(request, 'Ignoring %s' % obj)
 ignore.short_description = "Ignore"
 
