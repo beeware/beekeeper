@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load build_status %}
 {% block content %}
   <div>
     <ol class="breadcrumb">
@@ -18,6 +19,8 @@
                 <th>Description</th>
                 <th class="minimal">Created</th>
                 <th class="minimal">Updated</th>
+                <th class="minimal">Status</th>
+                <th class="minimal">Result</th>
             </tr>
         </thead>
         <tbody>
@@ -28,6 +31,8 @@
             <td>{{ change.description }}</td>
             <td class="minimal">{{ change.created|date:"j M Y, H:i" }}</td>
             <td class="minimal">{{ change.updated|date:"j M Y, H:i" }}</td>
+            <td class="minimal">{{ change.latest_build.get_status_display }}</td>
+            <td class="minimal">{% result change.latest_build.result %}</td>
         </tr>
     {% endfor %}
         </tbody>

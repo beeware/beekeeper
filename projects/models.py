@@ -165,6 +165,9 @@ class Change(models.Model):
                     'repo_name': self.project.repository.name,
                     'change_pk': str(self.pk),
                 })
+    @property
+    def latest_build(self):
+        return self.builds.latest('updated')
 
     @property
     def title(self):
