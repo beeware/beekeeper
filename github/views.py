@@ -9,7 +9,7 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerE
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-import requests
+from github3 import GitHub
 from ipaddress import ip_address, ip_network
 
 from github import hooks
@@ -21,7 +21,12 @@ def webhook(request):
     # Verify if request came from GitHub
     forwarded_for = u'{}'.format(request.META.get('HTTP_X_FORWARDED_FOR'))
     client_ip_address = ip_address(forwarded_for)
-    whitelist = requests.get('https://api.github.com/meta').json()['hooks']
+
+    gh_session = GitHub(
+            settings.GITHUB_USERNAME,
+            password=settings.GITHUB_ACCESS_TOKEN
+        )
+    whitelist = gh_session.meta()['hooks']
 
     for valid_ip in whitelist:
         if client_ip_address in ip_network(valid_ip):
