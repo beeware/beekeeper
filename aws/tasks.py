@@ -356,14 +356,13 @@ def sweeper(self, task_pk):
                         print("Task %s:%s is the most recent task on %s; consider terminating instance." % (
                             task.build, task, instance
                         ))
-                        print("FIXME - need to terminate")
-                        # terminated = instance.terminate(ec2_client=ec2_client)
-                        # if terminated:
-                        #     print("Instance %s terminated." % instance)
-                        # else:
-                        #     print("Need to preserve %s %s instances; not terminating %s." % (
-                        #         instance.profile.min_instances, instance.profile, instance
-                        #     ))
+                        terminated = instance.terminate(ec2_client=ec2_client)
+                        if terminated:
+                            print("Instance %s terminated." % instance)
+                        else:
+                            print("Need to preserve %s %s instances; not terminating %s." % (
+                                instance.profile.min_instances, instance.profile, instance
+                            ))
                     else:
                         print("%s has been used recently (most recently by %s:%s)." % (
                             instance, most_recent_task.build, most_recent_task
