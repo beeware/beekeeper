@@ -27,8 +27,11 @@ class ProfileAdmin(admin.ModelAdmin):
 
 def terminate(modeladmin, request, queryset):
     for obj in queryset:
-        obj.terminate()
-        messages.info(request, 'Terminating %s' % obj)
+        try:
+            obj.terminate()
+            messages.info(request, 'Terminating %s' % obj)
+        except Exception as e:
+            messages.error(request, str(e))
 terminate.short_description = "Terminate instance"
 
 

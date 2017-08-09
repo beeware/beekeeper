@@ -1,5 +1,7 @@
 import uuid
+
 import boto3
+from botocore.exceptions import ClientError
 
 from github3.exceptions import GitHubError
 
@@ -461,8 +463,13 @@ class Instance(models.Model):
         self.save()
 
         # Actually terminate the instance
-        ec2_client.terminate_instances(InstanceIds=[self.ec2_id])
+        try:
+            ec2_client.terminate_instances(InstanceIds=[self.ec2_id])
 
-        # Record the termination time.
-        self.terminated = timezone.now()
-        self.save()
+            # Record the termination time.
+            self.terminated = timezone.now()
+            self.save()
+        except ClientError as e:
+            raise RuntimeError('Problem terminating %s: [%s] %s' % (
+                obj, e.response['Error']['Code'], e.response['Error']['Message'],
+            ))
