@@ -456,18 +456,13 @@ class Instance(models.Model):
 
             ec2_client = aws_session.client('ec2')
 
-        if self.profile.instances.count() > self.profile.min_instances:
-            # Save the new state of the instance.
-            self.active = False
-            self.save()
+        # Save the new state of the instance.
+        self.active = False
+        self.save()
 
-            # Actually terminate the instance
-            ec2_client.terminate_instances(InstanceIds=[self.ec2_id])
+        # Actually terminate the instance
+        ec2_client.terminate_instances(InstanceIds=[self.ec2_id])
 
-            # Record the termination time.
-            self.terminated = timezone.now()
-            self.save()
-
-            return True
-        else:
-            return False
+        # Record the termination time.
+        self.terminated = timezone.now()
+        self.save()

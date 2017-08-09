@@ -24,8 +24,17 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display = ['slug', 'name', 'instance_type']
 
 
+
+def terminate(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.terminate()
+        messages.info(request, 'Terminating %s' % obj)
+terminate.short_description = "Terminate instance"
+
+
 @admin.register(Instance)
 class InstanceAdmin(admin.ModelAdmin):
     list_display = ['profile', 'ec2_id', 'container_arn', 'created', 'active']
     list_filter = ['active']
     raw_id_fields = ['tasks']
+    actions = [terminate]
