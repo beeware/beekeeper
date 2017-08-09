@@ -471,5 +471,5 @@ class Instance(models.Model):
             self.save()
         except ClientError as e:
             raise RuntimeError('Problem terminating %s: [%s] %s' % (
-                obj, e.response['Error']['Code'], e.response['Error']['Message'],
+                self, e.response['Error']['Code'], e.response['Error']['Message'],
             ))
