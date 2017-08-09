@@ -356,8 +356,11 @@ def sweeper(self, task_pk):
                         print("Task %s:%s is the most recent task on %s; consider terminating instance." % (
                             task.build, task, instance
                         ))
-
-                        if profile.instances.count() > profile.min_instances:
+                        instance_count = profile.instances.count()
+                        if instance_count > profile.min_instances:
+                            print("There are %s %s instances (min %s)" % (
+                                instance_count, profile.name, profile.min_instances
+                            ))
                             # Terminate the instance
                             instance.terminate(ec2_client=ec2_client)
 

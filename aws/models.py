@@ -246,7 +246,7 @@ class Task(models.Model):
                     instance = Instance.objects.get(profile=profile, ec2_id=ec2_id)
                     instance.container_arn = container_arn
                 except Instance.DoesNotExist:
-                    print("EC2 instance %s must be new. Recording instance.")
+                    print("EC2 instance %s must be new. Recording instance." % ec2_id)
                     instance = Instance(profile=profile, ec2_id=ec2_id)
 
             instance.save()
