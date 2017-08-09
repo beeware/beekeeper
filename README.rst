@@ -20,7 +20,7 @@ To deploy a new BeeKeeper instance, clone this repo, and then run::
 Django
 ~~~~~~
 
-Configure a `SECRET_KEY` for the Django instance
+Configure a `SECRET_KEY` for the Django instance::
 
     >>> from django.core.management.utils import get_random_secret_key
     >>> get_random_secret_key()
@@ -145,10 +145,10 @@ Any user logged in as an admin should see the project listed on the BeeKeeper
 homepage. If you approve the project, any PR or repository push will start a
 build as described in the `beekeeper.yml` file in the project home directory.
 
-.. Documentation
-.. -------------
+Documentation
+-------------
 
-.. Documentation for BeeKeeper can be found on `Read The Docs`_.
+Documentation for BeeKeeper can be found on `Read The Docs`_.
 
 Community
 ---------
