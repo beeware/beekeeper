@@ -75,11 +75,17 @@ class Project(models.Model):
 
     @property
     def pushes(self):
-        return Change.objects.filter(change_type=Change.CHANGE_TYPE_PUSH)
+        return Change.objects.filter(
+            project=self,
+            change_type=Change.CHANGE_TYPE_PUSH
+        )
 
     @property
     def pull_requests(self):
-        return Change.objects.filter(change_type=Change.CHANGE_TYPE_PULL_REQUEST)
+        return Change.objects.filter(
+            project=self,
+            change_type=Change.CHANGE_TYPE_PULL_REQUEST
+        )
 
     def current_build(self, branch_name):
         try:
