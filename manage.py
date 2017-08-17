@@ -5,15 +5,6 @@ import sys
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     try:
-        with open('.env') as envfile:
-            for line in envfile:
-                if line.strip() and not line.strip().startswith('#'):
-                    key, value = line.strip().split('=', 1)
-                    os.environ.setdefault(key.strip(), value.strip())
-    except FileNotFoundError:
-        pass
-
-    try:
         from django.core.management import execute_from_command_line
     except ImportError:
         # The above import may fail for some other reason. Ensure that the
