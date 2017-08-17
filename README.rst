@@ -6,6 +6,8 @@ Look after all the little worker bees.
 Getting started
 ---------------
 
+|heroku|
+
 To deploy a new BeeKeeper instance, clone this repo, and then run::
 
     $ heroku create
@@ -194,3 +196,5 @@ want to contribute code, please `fork the code`_ and `submit a pull request`_.
 .. _fork the code: https://github.com/pybee/beekeeper
 .. _submit a pull request: https://github.com/pybee/beekeeper/pulls
 .. _Homebrew: https://brew.sh/
+.. |heroku| image:: https://www.herokucdn.com/deploy/button.svg
+    :target: https://heroku.com/deploy?template=https://github.com/pybee/beekeeper/tree/master
