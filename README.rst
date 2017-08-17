@@ -17,6 +17,23 @@ To deploy a new BeeKeeper instance, clone this repo, and then run::
     $ heroku run ./manage.py migrate
     $ heroku run ./manage.py createsuperuser
 
+Local Development
+~~~~~~~~~~~~~~~~~
+
+To get started developing on BeeKeeper locally, follow the steps below.
+Unfortunately, these steps have only been tested on MacOS.
+
+- Install `Homebrew`_
+- Install postgresql: :code:`brew install postgresql`
+- Start postgresql: :code:`brew services start postgresql`
+- Create a DB for beekeeper: :code:`createdb beekeeper`
+- Clone the beekeeper repo.
+- In the beekeeper repo directory, copy the sample env file to the top of the directory: :code:`cp docs/sample.env .env` 
+- Create a virtualenvironment
+- Install packages: :code:`pip install -r requirements.txt`
+- Apply migrations: :code:`./manage.py migrate`
+- Start the server: :code:`./manage.py runserver`
+
 Django
 ~~~~~~
 
@@ -31,7 +48,7 @@ put::
 
     SECRET_KEY=<your key here>
 
-in the .env file inthe project home directory.
+in the .env file in the project home directory.
 
 Sendgrid
 ~~~~~~~~
@@ -176,3 +193,4 @@ want to contribute code, please `fork the code`_ and `submit a pull request`_.
 .. _log them on Github: https://github.com/pybee/beekeeper/issues
 .. _fork the code: https://github.com/pybee/beekeeper
 .. _submit a pull request: https://github.com/pybee/beekeeper/pulls
+.. _Homebrew: https://brew.sh/
