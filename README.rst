@@ -169,7 +169,7 @@ If you experience problems with BeeKeeper, `log them on GitHub`_. If you
 want to contribute code, please `fork the code`_ and `submit a pull request`_.
 
 .. _BeeWare suite: http://pybee.org
-.. _Read The Docs: https://beekeeper.readthedocs.io
+.. _Read The Docs: http://pybee-beekeeper.readthedocs.io
 .. _@pybeeware on Twitter: https://twitter.com/pybeeware
 .. _pybee/general: https://gitter.im/pybee/general
 .. _BeeWare Community Code of Conduct: http://pybee.org/community/behavior/
