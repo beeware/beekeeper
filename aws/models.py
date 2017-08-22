@@ -280,6 +280,7 @@ class Task(models.Model):
                 self.queued = timezone.now()
                 self.save()
         else:
+            print("FAILURE RESPONSE: %s" % response)
             raise RuntimeError('Unable to start worker: %s' % response['failures'][0]['reason'])
 
     def stop(self, aws_session=None, ecs_client=None):
