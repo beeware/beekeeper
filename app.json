@@ -1,0 +1,24 @@
+{
+    "name": "BeeKeeper",
+    "description": "Look after all the little worker bees.",
+    "env": {
+        "SECRET_KEY": {
+            "description": "The Django secret key",
+            "generator": "secret"
+        },
+        "PRODUCTION": "True"
+    },
+    "scripts": {
+        "postdeploy": "./manage.py migrate"
+    },
+    "formation": {
+        "worker": {
+            "quantity": 1,
+            "size": "free"
+        }
+    },
+    "addons": [
+        "heroku-redis",
+        "heroku-postgresql"
+    ]
+}

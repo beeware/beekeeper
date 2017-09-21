@@ -12,3 +12,4 @@ sendgrid_django==4.0.4
 requests==2.18.1
 github3.py==0.9.6
 PyYAML==3.12
+python-dotenv==0.6.5
