@@ -409,8 +409,6 @@ class Profile(models.Model):
             instance_data = {
                 'ImageId': self.ami,
                 'InstanceType': self.instance_type,
-                'MinCount': 1,
-                'MaxCount': 1,
                 'KeyName': key_name,
                 'SecurityGroupIds': security_groups,
                 'SubnetId': subnet,
@@ -428,7 +426,11 @@ class Profile(models.Model):
                 )
                 instance_id = response['SpotInstanceRequests'][0]['InstanceId']
             else:
-                response = ec2_client.run_instances(**instance_data)
+                response = ec2_client.run_instances(
+                    'MinCount': 1,
+                    'MaxCount': 1,
+                    **instance_data
+                )
                 instance_id = response['Instances'][0]['InstanceId']
 
             # Create a database record of the instance.
