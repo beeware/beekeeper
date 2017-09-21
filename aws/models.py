@@ -368,10 +368,10 @@ class Profile(models.Model):
         (ec2['name'], ec2['name'])
         for ec2 in EC2_TYPES
     ]
-    INSTANCE_TYPE_PRICES = [
-        (ec2['name'], str(ec2['price']))
+    INSTANCE_TYPE_PRICES = {
+        ec2['name']: str(ec2['price'])
         for ec2 in EC2_TYPES
-    ]
+    }
 
     name = models.CharField(max_length=100)
     slug = models.CharField(max_length=100, db_index=True)
