@@ -219,7 +219,7 @@ class Task(models.Model):
 
         container_definition.update({
             'cpu': profile.cpu,
-            'memory': profile.memory, 
+            'memory': profile.memory,
         })
 
         response = ecs_client.run_task(
@@ -367,6 +367,10 @@ class Profile(models.Model):
         (ec2['name'], ec2['name'])
         for ec2 in EC2_TYPES
     ]
+    INSTANCE_TYPE_PRICES = [
+        (ec2['name'], str(ec2['price']))
+        for ec2 in EC2_TYPES
+    ]
 
     name = models.CharField(max_length=100)
     slug = models.CharField(max_length=100, db_index=True)
@@ -401,7 +405,7 @@ class Profile(models.Model):
             ec2_client = aws_session.client('ec2')
 
         if self.max_instances is None or self.instances.active().count() < self.max_instances:
-            instance_data = { 
+            instance_data = {
                 'ImageId': self.ami,
                 'InstanceType': self.instance_type,
                 'MinCount': 1,
@@ -413,40 +417,26 @@ class Profile(models.Model):
                     "Name": "ecsInstanceRole"
                 },
                 'UserData': "#!/bin/bash \n echo ECS_CLUSTER=%s >> /etc/ecs/ecs.config" % cluster_name
-            } 
+            }
 
-            if self.spot: 
-                spot_price = str([x['price'] for x in EC2_TYPES if x['name'] == instance_data["InstanceType"]])
-
-                response = ec2_client.request_spot_instance(
+            if self.spot:
+                response = ec2_client.request_spot_instances(
                     InstanceCount=1,
-                    SpotPrice=spot_price,
+                    SpotPrice=Profile.INSTANCE_TYPE_PRICES[instance_data["InstanceType"]],
                     LaunchSpecification=instance_data
                 )
+                instance_id = response['SpotInstanceRequests'][0]['InstanceId']
             else:
-                response = ec2_client.run_instances(
-                    ImageId=self.ami,
-                    InstanceType=self.instance_type,
-                    MinCount=1,
-                    MaxCount=1,
-                    KeyName=key_name,
-                    SecurityGroupIds=security_groups,
-                    SubnetId=subnet,
-                    IamInstanceProfile={
-                        "Name": "ecsInstanceRole"
-                    },
-                    UserData="#!/bin/bash \n echo ECS_CLUSTER=%s >> /etc/ecs/ecs.config" % cluster_name
-                )
+                response = ec2_client.run_instances(**instance_data)
+                instance_id = response['Instances'][0]['InstanceId']
 
             # Create a database record of the instance.
-            instance = Instance.objects.create(
-                            profile=self,
-                            ec2_id=response['Instances'][0]['InstanceId']
-                        )
+            instance = Instance.objects.create(profile=self, ec2_id=instance_id)
         else:
             instance = None
 
         return instance
+
 
 class InstanceQuerySet(models.QuerySet):
     def active(self):
