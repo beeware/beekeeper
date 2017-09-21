@@ -427,8 +427,8 @@ class Profile(models.Model):
                 instance_id = response['SpotInstanceRequests'][0]['InstanceId']
             else:
                 response = ec2_client.run_instances(
-                    'MinCount': 1,
-                    'MaxCount': 1,
+                    MinCount=1,
+                    MaxCount=1,
                     **instance_data
                 )
                 instance_id = response['Instances'][0]['InstanceId']
