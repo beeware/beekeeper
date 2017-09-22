@@ -430,17 +430,27 @@ class Profile(models.Model):
                     SpotPrice=Profile.INSTANCE_TYPE_PRICES[instance_data["InstanceType"]],
                     LaunchSpecification=instance_data
                 )
-                instance_id = response['SpotInstanceRequests'][0]['InstanceId']
+                try:
+                    instance = Instance.objects.create(
+                        profile=self,
+                        ec2_id=response['SpotInstanceRequests'][0]['InstanceId']
+                    )
+                except KeyError:
+                    # No instance ID yet - but there has been an instance request.
+                    # Return the instance request ID so we don't Return none.
+                    instance = response['SpotInstanceRequests'][0]['SpotInstanceRequestId']
             else:
                 response = ec2_client.run_instances(
                     MinCount=1,
                     MaxCount=1,
                     **instance_data
                 )
-                instance_id = response['Instances'][0]['InstanceId']
 
-            # Create a database record of the instance.
-            instance = Instance.objects.create(profile=self, ec2_id=instance_id)
+                # Create a database record of the instance.
+                instance = Instance.objects.create(
+                    profile=self,
+                    ec2_id=response['Instances'][0]['InstanceId']
+                )
         else:
             instance = None
 
