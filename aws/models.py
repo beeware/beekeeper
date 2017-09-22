@@ -422,7 +422,9 @@ class Profile(models.Model):
             if self.spot:
                 # Spot instances need the user data to be base64 encoded.
                 # Yay for API consistency!!
-                instance_data['UserData'] = base64.b64encode(instance_data['UserData'].encode('utf-8'))
+                instance_data['UserData'] = base64.b64encode(
+                    instance_data['UserData'].encode('utf-8')
+                ).decode('utf-8')
                 response = ec2_client.request_spot_instances(
                     InstanceCount=1,
                     SpotPrice=Profile.INSTANCE_TYPE_PRICES[instance_data["InstanceType"]],
