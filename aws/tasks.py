@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 import boto3
@@ -10,10 +11,14 @@ from config.celery import app
 
 from django.conf import settings
 from django.utils import timezone
+
 from django.utils.timesince import timesince
 
 from projects.models import Change, Build
 from aws.models import Task
+
+
+log = logging.getLogger('aws')
 
 
 def load_task_configs(config):
@@ -89,7 +94,7 @@ def create_tasks(gh_repo, build):
 
     # Parse the phase configuration and create tasks
     for task_config in load_task_configs(phases):
-        print("Created phase %(phase)s task %(name)s" % task_config)
+        log.debug("Created phase %(phase)s task %(name)s" % task_config)
         task = Task.objects.create(
             build=build,
             **task_config
@@ -99,7 +104,7 @@ def create_tasks(gh_repo, build):
 
 def on_check_build_failure(self, exc, task_id, args, kwargs, einfo):
     build = Build.objects.get(pk=args[0])
-    print("Error checking build %s: %s" % (build, str(exc)))
+    log.error("Error checking build %s: %s" % (build, str(exc)))
     build.status = Build.STATUS_ERROR
     build.error = str(exc)
     build.save()
@@ -130,41 +135,41 @@ def check_build(self, build_pk):
         )
 
     if build.status == Build.STATUS_CREATED:
-        print("Starting build %s..." % build)
+        log.info("Starting build %s..." % build)
         # Record that the build has started.
         build.status = Build.STATUS_RUNNING
         build.save()
 
         # Retrieve task definition
-        print("Creating task definitions...")
+        log.debug("Creating task definitions...")
         create_tasks(gh_repo, build)
 
         # Start the tasks with no prerequisites
-        print("Starting initial tasks...")
+        log.debug("Starting initial tasks...")
         initial_tasks = build.tasks.filter(status=Build.STATUS_CREATED, phase=0)
         if initial_tasks:
             for task in initial_tasks:
-                print("Starting task %s..." % task.name)
+                log.info("Starting task %s..." % task.name)
                 task.start(ecs_client, ec2_client)
         else:
             raise ValueError("No phase 0 tasks defined for build type '%s'" % build.change.change_type)
 
     elif build.status == Build.STATUS_RUNNING:
-        print("Checking status of build %s..." % build)
+        log.debug("Checking status of build %s..." % build)
         # Update the status of all currently running tasks
         started_tasks = build.tasks.started()
         if started_tasks:
-            print("There are %s active tasks." % started_tasks.count())
+            log.debug("There are %s active tasks." % started_tasks.count())
             # Only check the *running* tasks - the ones where we have an ARN
             running_arns = [task.arn for task in started_tasks if task.arn]
             waiting_tasks = [task for task in started_tasks if task.arn is None]
 
             if waiting_tasks:
                 for task in waiting_tasks:
-                    print('Task %s: waiting for %s' % (
+                    log.debug('Task %s: waiting for %s' % (
                         task, timesince(task.queued)
                     ))
-                    print('   Trying to start again...')
+                    log.debug('   Trying to start again...')
                     task.start(ecs_client, ec2_client)
 
             if running_arns:
@@ -174,11 +179,11 @@ def check_build(self, build_pk):
                 )
 
                 for task_response in response['tasks']:
-                    print('Task %s: %s' % (
+                    log.debug('Task %s: %s' % (
                         task_response['taskArn'],
                         task_response['lastStatus'])
                     )
-                    print('Full response: %s' % task_response)
+                    log.debug('Full response: %s' % task_response)
 
                     task = build.tasks.get(arn=task_response['taskArn'])
                     if task_response['lastStatus'] == 'RUNNING':
@@ -226,7 +231,9 @@ def check_build(self, build_pk):
         unfinished_tasks = build.tasks.not_finished()
         if unfinished_tasks.exists():
             running_phase = max(unfinished_tasks.values_list('phase', flat=True))
-            print("Still waiting for tasks in phase %s to complete." % running_phase)
+            log.info("Still waiting for %s tasks in phase %s to complete." % (
+                len(unfinished_tasks), running_phase)
+            )
         else:
             # There are no unfinished tasks.
             # If there have been any failures or task errors, stop right now.
@@ -235,13 +242,13 @@ def check_build(self, build_pk):
             finished_phase = max(finished_tasks.values_list('phase', flat=True))
 
             if finished_tasks.error().exists():
-                print("Errors encountered during phase %s" % finished_phase)
+                log.info("Errors encountered during phase %s" % finished_phase)
                 new_tasks = None
                 build.status = Build.STATUS_ERROR
                 build.result = Build.RESULT_FAIL
                 build.error = "%s tasks generated errors" % build.tasks.error().count()
             elif finished_tasks.failed().exists():
-                print("Failures encountered during phase %s" % finished_phase)
+                log.info("Failures encountered during phase %s" % finished_phase)
                 new_tasks = None
                 build.status = Build.STATUS_DONE
                 build.result = Build.RESULT_FAIL
@@ -252,15 +259,15 @@ def check_build(self, build_pk):
                             )
 
             if new_tasks:
-                print("Starting new tasks...")
+                log.debug("Starting new tasks...")
                 for task in new_tasks:
-                    print("Starting task %s..." % task.name)
+                    log.info("Starting task %s..." % task.name)
                     task.start(ecs_client, ec2_client)
             elif new_tasks is None:
-                print("Build aborted.")
+                log.info("Build aborted.")
                 build.save()
             else:
-                print("No new tasks required.")
+                log.info("No new tasks required.")
                 build.status = Build.STATUS_DONE
                 build.result = min(
                     t.result
@@ -269,15 +276,15 @@ def check_build(self, build_pk):
                 )
 
                 build.save()
-                print("Build status %s" % build.get_status_display())
-                print("Build result %s" % build.get_result_display())
+                log.info("Build status %s" % build.get_status_display())
+                log.info("Build result %s" % build.get_result_display())
 
     elif build.status == Build.STATUS_STOPPING:
-        print("Stopping build %s..." % build)
+        log.debug("Stopping build %s..." % build)
         running_tasks = build.tasks.running()
         stopping_tasks = build.tasks.stopping()
         if running_tasks:
-            print("There are %s active tasks." % running_tasks.count())
+            log.info("There are %s active tasks." % running_tasks.count())
             for task in running_tasks:
                 task.stop(ecs_client=ecs_client)
         elif stopping_tasks:
@@ -287,11 +294,11 @@ def check_build(self, build_pk):
             )
 
             for task_response in response['tasks']:
-                print('Task %s: %s' % (
+                log.debug('Task %s: %s' % (
                     task_response['taskArn'],
                     task_response['lastStatus'])
                 )
-                print('Full response: %s' % task_response)
+                log.debug('Full response: %s' % task_response)
 
                 task = build.tasks.get(arn=task_response['taskArn'])
                 if task_response['lastStatus'] == 'STOPPED':
@@ -299,23 +306,23 @@ def check_build(self, build_pk):
                 elif task_response['lastStatus'] == 'FAILED':
                     task.status = Task.STATUS_ERROR
                 elif task_response['lastStatus'] != 'RUNNING':
-                    print(" - don't know how to handle this status")
+                    log.error("Don't know how to handle task status %s" % task_response['lastStatus'])
                 task.save()
         else:
-            print("There are no tasks running; Build %s has been stopped." % build)
+            log.info("There are no tasks running; Build %s has been stopped." % build)
             build.status = Build.STATUS_STOPPED
             build.save()
 
     if build.status not in (Build.STATUS_DONE, Build.STATUS_ERROR, Build.STATUS_STOPPED):
-        print("Schedule another build check...")
+        log.debug("Schedule another build check...")
         check_build.apply_async((build_pk,), countdown=5)
 
-    print("Build check complete.")
+    log.info("Build check complete.")
 
 
 def on_sweeper_failure(self, exc, task_id, args, kwargs, einfo):
     task = Task.objects.get(pk=args[0])
-    print("Error sweeping task %s:%s: %s" % (task.build, task, str(exc)))
+    log.info("Error sweeping task %s:%s: %s" % (task.build, task, str(exc)))
     task.status = Task.STATUS_ERROR
     task.save()
 
@@ -329,10 +336,10 @@ def sweeper(self, task_pk):
     try:
         task = Task.objects.get(pk=task_pk)
     except Task.DoesNotExist:
-        print("Task %s appears to have been purged; nothing to sweep." % task_pk)
+        log.info("Task %s appears to have been purged; nothing to sweep." % task_pk)
         return
 
-    print("Sweeping %s:%s..." % (task.build, task))
+    log.info("Sweeping %s:%s..." % (task.build, task))
 
     aws_session = boto3.session.Session(
         region_name=settings.AWS_REGION,
@@ -344,52 +351,52 @@ def sweeper(self, task_pk):
     if task.is_finished:
         profile = task.profile
         if task.updated + timedelta(seconds=profile.cooldown) < timezone.now():
-            print("Task %s:%s has exceeded cooldown period." % (
+            log.info("Task %s:%s has exceeded cooldown period." % (
                 task.build, task
             ))
             active_instances = task.instances.active()
             if active_instances:
                 for instance in active_instances:
-                    print("Checking %s for activity..." % instance)
+                    log.info("Checking %s for activity..." % instance)
                     most_recent_task = instance.tasks.latest('updated')
                     if task == most_recent_task:
-                        print("Task %s:%s is the most recent task on %s; consider terminating instance." % (
+                        log.info("Task %s:%s is the most recent task on %s; consider terminating instance." % (
                             task.build, task, instance
                         ))
                         instance_count = profile.instances.count()
                         if instance_count > profile.min_instances:
-                            print("There are %s %s instances (min %s)" % (
+                            log.info("There are %s %s instances (min %s)" % (
                                 instance_count, profile.name, profile.min_instances
                             ))
                             # Terminate the instance
                             instance.terminate(ec2_client=ec2_client)
 
-                            print("Instance %s terminated." % instance)
+                            log.info("Instance %s terminated." % instance)
                         else:
-                            print("Need to preserve %s %s instances; not terminating %s." % (
+                            log.info("Need to preserve %s %s instances; not terminating %s." % (
                                 instance.profile.min_instances, instance.profile, instance
                             ))
                     else:
-                        print("%s has been used recently (most recently by %s:%s)." % (
+                        log.info("%s has been used recently (most recently by %s:%s)." % (
                             instance, most_recent_task.build, most_recent_task
                         ))
             else:
-                print("None of the instances associated with %s:%s are still active." % (
+                log.info("None of the instances associated with %s:%s are still active." % (
                     task.build, task
                 ))
         else:
-            print("Task %s:%s has been updated (possibly restarted and re-finished). No sweeping required." % (
+            log.info("Task %s:%s has been updated (possibly restarted and re-finished). No sweeping required." % (
                 task.build, task
             ))
     else:
-        print("Task %s:%s has been updated (possibly restarted). No sweeping required." % (
+        log.info("Task %s:%s has been updated (possibly restarted). No sweeping required." % (
             task.build, task
         ))
 
 
 def on_reaper_failure(self, exc, task_id, args, kwargs, einfo):
     task = Task.objects.get(pk=args[0])
-    print("Error reaping task %s:%s: %s" % (task.build, task, str(exc)))
+    log.info("Error reaping task %s:%s: %s" % (task.build, task, str(exc)))
     task.status = Build.STATUS_ERROR
     task.save()
 
@@ -402,22 +409,22 @@ def reaper(self, task_pk):
     try:
         task = Task.objects.get(pk=task_pk)
     except Task.DoesNotExist:
-        print("Task %s appears to have been purged; nothing to reap." % task_pk)
+        log.info("Task %s appears to have been purged; nothing to reap." % task_pk)
         return
 
-    print("Checking if %s:%s has finished..." % (task.build, task))
+    log.info("Checking if %s:%s has finished..." % (task.build, task))
 
     if task.is_finished:
-        print("Task %s:%s has finished." % (task.build, task))
+        log.info("Task %s:%s has finished." % (task.build, task))
     else:
         profile = task.profile
         if task.started + timedelta(seconds=profile.timeout) < timezone.now():
-            print("Task %s:%s has exceeded maximum duration for profile %s; terminating" % (
+            log.info("Task %s:%s has exceeded maximum duration for profile %s; terminating" % (
                 task.build, task, profile
             ))
             task.stop()
         else:
-            print("Task %s:%s has been restarted." % (
+            log.info("Task %s:%s has been restarted." % (
                 task.build, task
             ))
 

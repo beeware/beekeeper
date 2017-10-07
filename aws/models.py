@@ -1,4 +1,5 @@
 import base64
+import logging
 import uuid
 
 import boto3
@@ -14,6 +15,9 @@ from django.utils import timezone
 from django.utils.timesince import timesince
 
 from projects.models import Build, ProjectSetting
+
+
+log = logging.getLogger('aws')
 
 
 class TaskQuerySet(models.QuerySet):
@@ -235,19 +239,19 @@ class Task(models.Model):
 
             try:
                 instance = Instance.objects.get(profile=profile, container_arn=container_arn)
-                print("Task deployed on container %s." % container_arn)
+                log.info("Task deployed on container %s." % container_arn)
             except Instance.DoesNotExist:
-                print("Task deployed on container %s..." % container_arn)
+                log.info("Task deployed on container %s..." % container_arn)
                 try:
                     ec2_id = ecs_client.describe_container_instances(
                             cluster=settings.AWS_ECS_CLUSTER_NAME,
                             containerInstances=[container_arn]
                         )['containerInstances'][0]['ec2InstanceId']
-                    print("Container %s is on EC2 instance %s." % (container_arn, ec2_id))
+                    log.info("Container %s is on EC2 instance %s." % (container_arn, ec2_id))
                     instance = Instance.objects.get(profile=profile, ec2_id=ec2_id)
                     instance.container_arn = container_arn
                 except Instance.DoesNotExist:
-                    print("EC2 instance %s must be new. Recording instance." % ec2_id)
+                    log.info("EC2 instance %s is new." % ec2_id)
                     instance = Instance(profile=profile, ec2_id=ec2_id)
 
             instance.save()
@@ -265,7 +269,7 @@ class Task(models.Model):
             self.save()
         elif response['failures'][0]['reason'] in ['RESOURCE:CPU']:
             if self.status == Task.STATUS_CREATED:
-                print("Spawning new %s instance..." % profile)
+                log.info("Spawning new %s instance..." % profile)
                 instance = profile.start_instance(
                     key_name=settings.AWS_EC2_KEY_PAIR_NAME,
                     security_groups=settings.AWS_ECS_SECURITY_GROUP_IDS.split(':'),
@@ -274,14 +278,14 @@ class Task(models.Model):
                     ec2_client=ec2_client,
                 )
                 if instance:
-                    print("Created instance %s" % instance)
+                    log.info("Created instance %s" % instance)
                 else:
-                    print("Maximum number of %s instances reached. Waiting for spare capacity..." % profile)
+                    log.info("Maximum number of %s instances reached. Waiting for spare capacity..." % profile)
                 self.status = Task.STATUS_WAITING
                 self.queued = timezone.now()
                 self.save()
         else:
-            print("FAILURE RESPONSE: %s" % response)
+            log.error("FAILURE RESPONSE: %s" % response)
             raise RuntimeError('Unable to start worker: %s' % response['failures'][0]['reason'])
 
     def stop(self, aws_session=None, ecs_client=None):
