@@ -20,6 +20,14 @@ from aws.models import Task
 
 log = logging.getLogger('aws')
 
+# Turn down Github logging
+ghlog = logging.getLogger('github3')
+ghlog.setLevel(logging.WARNING)
+
+# Turn down urllib3 logging
+urllib3log = logging.getLogger('requests.packages.urllib3')
+urllib3log.setLevel(logging.WARNING)
+
 
 def load_task_configs(config):
     task_data = []
@@ -155,7 +163,7 @@ def check_build(self, build_pk):
             raise ValueError("No phase 0 tasks defined for build type '%s'" % build.change.change_type)
 
     elif build.status == Build.STATUS_RUNNING:
-        log.debug("Checking status of build %s..." % build)
+        log.info("Checking status of build %s..." % build)
         # Update the status of all currently running tasks
         started_tasks = build.tasks.started()
         if started_tasks:
@@ -280,7 +288,7 @@ def check_build(self, build_pk):
                 log.info("Build result %s" % build.get_result_display())
 
     elif build.status == Build.STATUS_STOPPING:
-        log.debug("Stopping build %s..." % build)
+        log.info("Stopping build %s..." % build)
         running_tasks = build.tasks.running()
         stopping_tasks = build.tasks.stopping()
         if running_tasks:
