@@ -37,7 +37,7 @@ terminate.short_description = "Terminate instance"
 
 @admin.register(Instance)
 class InstanceAdmin(admin.ModelAdmin):
-    list_display = ['profile', 'ec2_id', 'container_arn', 'created', 'active']
-    list_filter = ['active']
+    list_display = ['profile', 'ec2_id', 'container_arn', 'created', 'active', 'preferred']
+    list_filter = ['active', 'preferred']
     raw_id_fields = ['tasks']
     actions = [terminate]
