@@ -371,7 +371,7 @@ def sweeper(self, task_pk):
                         log.info("Task %s:%s is the most recent task on %s; consider terminating instance." % (
                             task.build, task, instance
                         ))
-                        instance_count = profile.instances.count()
+                        instance_count = profile.instances.active.count()
                         if instance_count > profile.min_instances:
                             log.info("There are %s %s instances (min %s)" % (
                                 instance_count, profile.name, profile.min_instances
