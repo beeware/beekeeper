@@ -426,6 +426,7 @@ class Profile(models.Model):
             if self.spot:
                 # Spot instances need the user data to be base64 encoded.
                 # Yay for API consistency!!
+                log.info('Requesting EC2 spot instance...')
                 instance_data['UserData'] = base64.b64encode(
                     instance_data['UserData'].encode('utf-8')
                 ).decode('utf-8')
@@ -435,6 +436,7 @@ class Profile(models.Model):
                     LaunchSpecification=instance_data
                 )
                 try:
+                    log.info('Spot instance %s created.' % response['SpotInstanceRequests'][0]['InstanceId'])
                     instance = Instance.objects.create(
                         profile=self,
                         ec2_id=response['SpotInstanceRequests'][0]['InstanceId']
@@ -442,8 +444,10 @@ class Profile(models.Model):
                 except KeyError:
                     # No instance ID yet - but there has been an instance request.
                     # Return the instance request ID so we don't Return none.
+                    log.info('Waiting for spot instance request to be granted...')
                     instance = response['SpotInstanceRequests'][0]['SpotInstanceRequestId']
             else:
+                log.info('Starting EC2 instance...')
                 response = ec2_client.run_instances(
                     MinCount=1,
                     MaxCount=1,
