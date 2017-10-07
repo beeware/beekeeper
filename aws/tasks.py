@@ -372,7 +372,9 @@ def sweeper(self, task_pk):
                             task.build, task, instance
                         ))
                         instance_count = profile.instances.active().count()
-                        if instance_count > profile.min_instances:
+                        if instance.preferred:
+                            log.info("Instance %s has been marked for preservation" % instance)
+                        elif instance_count > profile.min_instances:
                             log.info("There are %s %s instances (min %s)" % (
                                 instance_count, profile.name, profile.min_instances
                             ))

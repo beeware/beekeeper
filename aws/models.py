@@ -484,6 +484,7 @@ class Instance(models.Model):
     terminated = models.DateTimeField(null=True, blank=True)
 
     active = models.BooleanField(default=True)
+    preferred = models.BooleanField(default=False)
 
     def __str__(self):
         return 'Container %s (EC2 ID %s)' % (self.container_arn, self.ec2_id)
