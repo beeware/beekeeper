@@ -143,41 +143,40 @@ def check_build(self, build_pk):
         )
 
     if build.status == Build.STATUS_CREATED:
-        log.info("Starting build %s..." % build)
+        log.info("Build %s: Starting..." % build)
         # Record that the build has started.
         build.status = Build.STATUS_RUNNING
         build.save()
 
         # Retrieve task definition
-        log.debug("Creating task definitions...")
+        log.debug("Build %s: Creating task definitions..." % build)
         create_tasks(gh_repo, build)
 
         # Start the tasks with no prerequisites
-        log.debug("Starting initial tasks...")
+        log.debug("Build %s: Starting initial tasks..." % build)
         initial_tasks = build.tasks.filter(status=Build.STATUS_CREATED, phase=0)
         if initial_tasks:
             for task in initial_tasks:
-                log.info("Starting task %s..." % task.name)
+                log.info("Build %s: Starting task %s..." % (build, task.name))
                 task.start(ecs_client, ec2_client)
         else:
             raise ValueError("No phase 0 tasks defined for build type '%s'" % build.change.change_type)
 
     elif build.status == Build.STATUS_RUNNING:
-        log.info("Checking status of build %s..." % build)
+        log.info("Build %s: Checking status of build..." % build)
         # Update the status of all currently running tasks
         started_tasks = build.tasks.started()
         if started_tasks:
-            log.debug("There are %s active tasks." % started_tasks.count())
+            log.debug("Build %s: There are %s active tasks." % (build, started_tasks.count()))
             # Only check the *running* tasks - the ones where we have an ARN
             running_arns = [task.arn for task in started_tasks if task.arn]
             waiting_tasks = [task for task in started_tasks if task.arn is None]
 
             if waiting_tasks:
                 for task in waiting_tasks:
-                    log.debug('Task %s: waiting for %s' % (
-                        task, timesince(task.queued)
+                    log.debug('Build %s, Task %s: waiting for %s. Trying to start again...' % (
+                        build, task, timesince(task.queued)
                     ))
-                    log.debug('   Trying to start again...')
                     task.start(ecs_client, ec2_client)
 
             if running_arns:
@@ -187,11 +186,12 @@ def check_build(self, build_pk):
                 )
 
                 for task_response in response['tasks']:
-                    log.debug('Task %s: %s' % (
+                    log.debug('Build %s, Task %s: %s' % (
+                        build,
                         task_response['taskArn'],
                         task_response['lastStatus'])
                     )
-                    log.debug('Full response: %s' % task_response)
+                    log.debug('Build %s: Full response %s' % (build, task_response))
 
                     task = build.tasks.get(arn=task_response['taskArn'])
                     if task_response['lastStatus'] == 'RUNNING':
@@ -239,8 +239,8 @@ def check_build(self, build_pk):
         unfinished_tasks = build.tasks.not_finished()
         if unfinished_tasks.exists():
             running_phase = max(unfinished_tasks.values_list('phase', flat=True))
-            log.info("Still waiting for %s tasks in phase %s to complete." % (
-                len(unfinished_tasks), running_phase)
+            log.info("Build %s: Still waiting for %s tasks in phase %s to complete." % (
+                build, len(unfinished_tasks), running_phase)
             )
         else:
             # There are no unfinished tasks.
@@ -250,13 +250,13 @@ def check_build(self, build_pk):
             finished_phase = max(finished_tasks.values_list('phase', flat=True))
 
             if finished_tasks.error().exists():
-                log.info("Errors encountered during phase %s" % finished_phase)
+                log.info("Build %s: Errors encountered during phase %s" % (build, finished_phase))
                 new_tasks = None
                 build.status = Build.STATUS_ERROR
                 build.result = Build.RESULT_FAIL
                 build.error = "%s tasks generated errors" % build.tasks.error().count()
             elif finished_tasks.failed().exists():
-                log.info("Failures encountered during phase %s" % finished_phase)
+                log.info("Build %s: Failures encountered during phase %s" % (build, finished_phase))
                 new_tasks = None
                 build.status = Build.STATUS_DONE
                 build.result = Build.RESULT_FAIL
@@ -267,15 +267,15 @@ def check_build(self, build_pk):
                             )
 
             if new_tasks:
-                log.debug("Starting new tasks...")
+                log.debug("Build %s: Starting new tasks..." % build)
                 for task in new_tasks:
-                    log.info("Starting task %s..." % task.name)
+                    log.info("Build %s: Starting task %s..." % (build, task.name))
                     task.start(ecs_client, ec2_client)
             elif new_tasks is None:
-                log.info("Build aborted.")
+                log.info("Build %s: Aborted." % build)
                 build.save()
             else:
-                log.info("No new tasks required.")
+                log.info("Build %s: No new tasks required." % build)
                 build.status = Build.STATUS_DONE
                 build.result = min(
                     t.result
@@ -284,15 +284,15 @@ def check_build(self, build_pk):
                 )
 
                 build.save()
-                log.info("Build status %s" % build.get_status_display())
-                log.info("Build result %s" % build.get_result_display())
+                log.info("Build %s: Status %s" % (build, build.get_status_display()))
+                log.info("Build %s: Result %s" % (build, build.get_result_display()))
 
     elif build.status == Build.STATUS_STOPPING:
-        log.info("Stopping build %s..." % build)
+        log.info("Build %s: Stopping..." % build)
         running_tasks = build.tasks.running()
         stopping_tasks = build.tasks.stopping()
         if running_tasks:
-            log.info("There are %s active tasks." % running_tasks.count())
+            log.info("Build %s: There are %s active tasks." % (build, running_tasks.count()))
             for task in running_tasks:
                 task.stop(ecs_client=ecs_client)
         elif stopping_tasks:
@@ -306,7 +306,7 @@ def check_build(self, build_pk):
                     task_response['taskArn'],
                     task_response['lastStatus'])
                 )
-                log.debug('Full response: %s' % task_response)
+                log.debug('Build %s: Full response %s' % (build, task_response))
 
                 task = build.tasks.get(arn=task_response['taskArn'])
                 if task_response['lastStatus'] == 'STOPPED':
@@ -314,18 +314,20 @@ def check_build(self, build_pk):
                 elif task_response['lastStatus'] == 'FAILED':
                     task.status = Task.STATUS_ERROR
                 elif task_response['lastStatus'] != 'RUNNING':
-                    log.error("Don't know how to handle task status %s" % task_response['lastStatus'])
+                    log.error("Build %s: Don't know how to handle task status %s" % (
+                        build, task_response['lastStatus']
+                    ))
                 task.save()
         else:
-            log.info("There are no tasks running; Build %s has been stopped." % build)
+            log.info("Build %s: There are no tasks running; Build has been stopped." % build)
             build.status = Build.STATUS_STOPPED
             build.save()
 
     if build.status not in (Build.STATUS_DONE, Build.STATUS_ERROR, Build.STATUS_STOPPED):
-        log.debug("Schedule another build check...")
+        log.debug("Build %s: Schedule another check..." % build)
         check_build.apply_async((build_pk,), countdown=5)
 
-    log.info("Build check complete.")
+    log.debug("Build %s: Check complete." % build)
 
 
 def on_sweeper_failure(self, exc, task_id, args, kwargs, einfo):
