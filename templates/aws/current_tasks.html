@@ -15,9 +15,7 @@
                 <th class="minimal">#</th>
                 <th class="minimal">Author</th>
                 <th>Description</th>
-                <th class="minimal">Created</th>
 
-                <th class="minimal">Phase</th>
                 <th>Task</th>
                 <th class="minimal">Status</th>
                 <th class="minimal">Result</th>
@@ -31,10 +29,8 @@
                 <td class="minimal"><a href="{{ task.build.change.get_absolute_url }}">{{ task.build.change.title }}</a></td>
                 <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}" class="avatar">{{ task.build.change.user }}</td>
                 <td>{{ task.build.change.description }}</td>
-                <td class="minimal">{{ task.build.change.created|date:"j M Y, H:i" }}</td>
 
-                <td class="minimal">{{ task.phase }}</td>
-                <td><a href="{{ task.get_absolute_url }}">{{ task.name }}</a></td>
+                <td><a href="{{ task.get_absolute_url }}">{{ task.phase }}: {{ task.name }}</a></td>
                 <td class="minimal" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
                 <td class="minimal" id='{{ task.slug }}-result'>{% result task.result %}</td>
             </tr>
@@ -52,9 +48,7 @@
                 <th class="minimal">#</th>
                 <th class="minimal">Author</th>
                 <th>Description</th>
-                <th class="minimal">Updated</th>
 
-                <th class="minimal">Phase</th>
                 <th>Task</th>
                 <th class="minimal">Status</th>
                 <th class="minimal">Result</th>
@@ -68,10 +62,8 @@
                 <td class="minimal"><a href="{{ task.build.change.get_absolute_url }}">{{ task.build.change.title }}</a></td>
                 <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}" class="avatar">{{ task.build.change.user }}</td>
                 <td>{{ task.build.change.description }}</td>
-                <td class="minimal">{{ task.build.change.created|date:"j M Y, H:i" }}</td>
 
-                <td class="minimal">{{ task.phase }}</td>
-                <td><a href="{{ task.get_absolute_url }}">{{ task.name }}</a></td>
+                <td><a href="{{ task.get_absolute_url }}">{{ task.phase }}: {{ task.name }}</a></td>
                 <td class="minimal" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
                 <td class="minimal" id='{{ task.slug }}-result'>{% result task.result %}</td>
             </tr>
@@ -88,9 +80,7 @@
                 <th class="minimal">#</th>
                 <th class="minimal">Author</th>
                 <th>Description</th>
-                <th class="minimal">Completed</th>
 
-                <th class="minimal">Phase</th>
                 <th>Task</th>
                 <th class="minimal">Status</th>
                 <th class="minimal">Result</th>
@@ -104,10 +94,8 @@
                 <td class="minimal"><a href="{{ task.build.change.get_absolute_url }}">{{ task.build.change.title }}</a></td>
                 <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}" class="avatar">{{ task.build.change.user }}</td>
                 <td>{{ task.build.change.description }}</td>
-                <td class="minimal">{{ task.build.change.completed|date:"j M Y, H:i" }}</td>
 
-                <td class="minimal">{{ task.phase }}</td>
-                <td><a href="{{ task.get_absolute_url }}">{{ task.name }}</a></td>
+                <td><a href="{{ task.get_absolute_url }}">{{ task.phase }}: {{ task.name }}</a></td>
                 <td class="minimal" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
                 <td class="minimal" id='{{ task.slug }}-result'>{% result task.result %}</td>
             </tr>
