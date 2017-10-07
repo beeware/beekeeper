@@ -26,5 +26,7 @@ urlpatterns = [
     url(r'^github/', include('github.urls', namespace='github')),
     url(r'^projects/', include('projects.urls', namespace='projects')),
 
+    url(r'^tasks/', include('aws.urls', namespace='aws')),
+
     url(r'^$', beekeeper.home, name='home')
 ]

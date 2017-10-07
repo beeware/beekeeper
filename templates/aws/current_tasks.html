@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% load build_status %}
+{% block content %}
+  <div>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    </ol>
+
+    <h1>Current tasks</h1>
+    <table class="table table-hover">
+        <thead class="thead-default">
+            <tr>
+                <th class="minimal">Project</th>
+
+                <th class="minimal">#</th>
+                <th class="minimal">Author</th>
+                <th>Description</th>
+                <th class="minimal">Created</th>
+
+                <th class="minimal">Phase</th>
+                <th>Task</th>
+                <th class="minimal">Status</th>
+                <th class="minimal">Result</th>
+            </tr>
+        </thead>
+        <tbody id="tasks">
+        {% for task in current %}
+            <tr scope="row">
+                <td><img src="{{ task.build.change.project.repository.owner.avatar_url }}" alt="Github avatar for {{ task.build.change.project.repository.owner }}" class="avatar"><a href="{{ task.build.change.project.get_absolute_url }}">{{ task.build.change.project.repository.full_name }}</a></td>
+
+                <td class="minimal"><a href="{{ task.build.change.get_absolute_url }}">{{ task.build.change.title }}</a></td>
+                <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}" class="avatar">{{ task.build.change.user }}</td>
+                <td>{{ task.build.change.description }}</td>
+                <td class="minimal">{{ task.build.change.created|date:"j M Y, H:i" }}</td>
+
+                <td class="minimal">{{ task.phase }}</td>
+                <td><a href="{{ task.get_absolute_url }}">{{ task.name }}</a></td>
+                <td class="minimal" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
+                <td class="minimal" id='{{ task.slug }}-result'>{% result task.result %}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+
+    <h1>Pending tasks</h1>
+    <table class="table table-hover">
+        <thead class="thead-default">
+            <tr>
+                <th class="minimal">Project</th>
+
+                <th class="minimal">#</th>
+                <th class="minimal">Author</th>
+                <th>Description</th>
+                <th class="minimal">Updated</th>
+
+                <th class="minimal">Phase</th>
+                <th>Task</th>
+                <th class="minimal">Status</th>
+                <th class="minimal">Result</th>
+            </tr>
+        </thead>
+        <tbody id="tasks">
+        {% for task in pending %}
+            <tr scope="row">
+                <td><img src="{{ task.build.change.project.repository.owner.avatar_url }}" alt="Github avatar for {{ task.build.change.project.repository.owner }}" class="avatar"><a href="{{ task.build.change.project.get_absolute_url }}">{{ task.build.change.project.repository.full_name }}</a></td>
+
+                <td class="minimal"><a href="{{ task.build.change.get_absolute_url }}">{{ task.build.change.title }}</a></td>
+                <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}" class="avatar">{{ task.build.change.user }}</td>
+                <td>{{ task.build.change.description }}</td>
+                <td class="minimal">{{ task.build.change.created|date:"j M Y, H:i" }}</td>
+
+                <td class="minimal">{{ task.phase }}</td>
+                <td><a href="{{ task.get_absolute_url }}">{{ task.name }}</a></td>
+                <td class="minimal" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
+                <td class="minimal" id='{{ task.slug }}-result'>{% result task.result %}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <h1>Recently completed tasks</h1>
+    <table class="table table-hover">
+        <thead class="thead-default">
+            <tr>
+                <th class="minimal">Project</th>
+
+                <th class="minimal">#</th>
+                <th class="minimal">Author</th>
+                <th>Description</th>
+                <th class="minimal">Completed</th>
+
+                <th class="minimal">Phase</th>
+                <th>Task</th>
+                <th class="minimal">Status</th>
+                <th class="minimal">Result</th>
+            </tr>
+        </thead>
+        <tbody id="tasks">
+        {% for task in recents %}
+            <tr scope="row">
+                <td><img src="{{ task.build.change.project.repository.owner.avatar_url }}" alt="Github avatar for {{ task.build.change.project.repository.owner }}" class="avatar"><a href="{{ task.build.change.project.get_absolute_url }}">{{ task.build.change.project.repository.full_name }}</a></td>
+
+                <td class="minimal"><a href="{{ task.build.change.get_absolute_url }}">{{ task.build.change.title }}</a></td>
+                <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}" class="avatar">{{ task.build.change.user }}</td>
+                <td>{{ task.build.change.description }}</td>
+                <td class="minimal">{{ task.build.change.completed|date:"j M Y, H:i" }}</td>
+
+                <td class="minimal">{{ task.phase }}</td>
+                <td><a href="{{ task.get_absolute_url }}">{{ task.name }}</a></td>
+                <td class="minimal" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
+                <td class="minimal" id='{{ task.slug }}-result'>{% result task.result %}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+
+{% block scripts %}
+
+{% if not build.is_finished %}
+function refresh() {
+    var xmlhttp=new XMLHttpRequest();
+
+    document.getElementById('spinner').style.display = 'inline'
+    document.getElementById('error').style.display = 'none'
+
+    xmlhttp.open("GET", '{{ build.get_status_url }}');
+    xmlhttp.onreadystatechange = function() {
+        try {
+            document.getElementById('spinner').style.display = 'none'
+            if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+                if (xmlhttp.status == 200) {
+                    var response = JSON.parse(xmlhttp.responseText);
+
+                    // Update status
+                    var status = document.getElementById('status');
+                    status.textContent = response['status']
+
+                    // Update result
+                    var result = document.getElementById('result');
+                    switch (response['result']) {
+                        case 0:
+                            result.innerHTML = '{% result 0 %}'
+                            break;
+                        case 10:
+                            result.innerHTML = '{% result 10 %}'
+                            break;
+                        case 19:
+                            result.innerHTML = '{% result 19 %}'
+                            break;
+                        case 20:
+                            result.innerHTML = '{% result 20 %}'
+                            break;
+                        default:
+                            result.innerHTML = '{% result 99 %}'
+                            break;
+                    }
+
+                    for (var slug in response.tasks) {
+                        // Update task status
+                        status = document.getElementById(slug + '-status');
+                        if (status) {
+                            status.textContent = response['tasks'][slug]['status']
+
+                            // Update result
+                            result = document.getElementById(slug + '-result');
+                            switch (response['tasks'][slug]['result']) {
+                                case 0:
+                                    result.innerHTML = '{% result 0 %}'
+                                    break;
+                                case 10:
+                                    result.innerHTML = '{% result 10 %}'
+                                    break;
+                                case 19:
+                                    result.innerHTML = '{% result 19 %}'
+                                    break;
+                                case 20:
+                                    result.innerHTML = '{% result 20 %}'
+                                    break;
+                                default:
+                                    result.innerHTML = '{% result 99 %}'
+                                    break;
+                            }
+                        } else {
+                            row = document.createElement('tr')
+                            row.scope = "row"
+
+                            col = document.createElement('td')
+                            col.className = 'minimal'
+                            col.textContent = response['tasks'][slug]['phase']
+                            row.appendChild(col)
+
+                            col = document.createElement('td')
+                            link = document.createElement('a')
+                            link.href = response['tasks'][slug]['url']
+                            link.textContent = response['tasks'][slug]['name']
+                            col.appendChild(link)
+                            row.appendChild(col)
+
+                            col = document.createElement('td')
+                            col.id = slug + '-status'
+                            col.className = 'minimal'
+                            col.textContent = response['tasks'][slug]['status']
+                            row.appendChild(col)
+
+                            col = document.createElement('td')
+                            col.id = slug + '-result'
+                            col.className = 'minimal'
+                            switch (response['tasks'][slug]['result']) {
+                                case 0:
+                                    col.innerHTML = '{% result 0 %}'
+                                    break;
+                                case 10:
+                                    col.innerHTML = '{% result 10 %}'
+                                    break;
+                                case 19:
+                                    col.innerHTML = '{% result 19 %}'
+                                    break;
+                                case 20:
+                                    col.innerHTML = '{% result 20 %}'
+                                    break;
+                                default:
+                                    col.innerHTML = '{% result 99 %}'
+                                    break;
+                            }
+                            row.appendChild(col)
+
+                            tasks = document.getElementById('tasks')
+                            tasks.appendChild(row)
+                        }
+                    }
+
+                    if (response['finished']) {
+                        document.getElementById('stop').style.display = 'none';
+                        document.getElementById('restart').style.display = 'block';
+                    } else {
+                        window.setTimeout(refresh, 10000);
+                    }
+                } else {
+                    document.getElementById('error').style.display = 'inline'
+                    console.log('Error: ' + xmlhttp.statusText)
+                    window.setTimeout(refresh(response.nextToken), 30000);
+                }
+            }
+        } catch (e) {
+            document.getElementById('error').style.display = 'inline'
+            console.log('Error: ' + e)
+            window.setTimeout(refresh, 30000)
+
+            document.getElementById('restart').style.display = 'block';
+            document.getElementById('resume').style.display = 'block';
+        }
+    }
+    xmlhttp.send();
+}
+
+// window.setTimeout(refresh, 10000);
+{% endif %}
+{% endblock %}

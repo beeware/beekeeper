@@ -1,6 +1,7 @@
 import base64
 import logging
 import uuid
+from datetime import timedelta
 
 import boto3
 from botocore.exceptions import ClientError
@@ -34,6 +35,9 @@ class TaskQuerySet(models.QuerySet):
                     Task.STATUS_STOPPING,
                 ))
 
+    def created(self):
+        return self.filter(status=Task.STATUS_CREATED)
+
     def waiting(self):
         return self.filter(status=Task.STATUS_WAITING)
 
@@ -49,6 +53,17 @@ class TaskQuerySet(models.QuerySet):
                                 Task.STATUS_ERROR,
                                 Task.STATUS_STOPPED,
                             ])
+
+    def recently_finished(self):
+        return self.filter(
+            status__in=[
+                Task.STATUS_DONE,
+                Task.STATUS_ERROR,
+                Task.STATUS_STOPPING,
+                Task.STATUS_STOPPED,
+            ],
+            updated__gt=timezone.now() - timedelta(hours=1)
+        )
 
     def done(self):
         return self.filter(status=Task.STATUS_DONE)

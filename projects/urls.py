@@ -22,5 +22,5 @@ urlpatterns = [
         projects.build_code, name='build-code'),
 
     url(r'^(?P<owner>[-\w]+)/(?P<repo_name>[-\w]+)/change/(?P<change_pk>[-\da-fA-F]{8}-[-\da-fA-F]{4}-4[-\da-fA-F]{3}-[-\da-fA-F]{4}-[-\da-fA-F]{12})/build/(?P<build_pk>[-\da-fA-F]{8}-[-\da-fA-F]{4}-4[-\da-fA-F]{3}-[-\da-fA-F]{4}-[-\da-fA-F]{12})/task/',
-        include('%s.urls' % settings.BEEKEEPER_BUILD_APP))
+        include('%s.task_urls' % settings.BEEKEEPER_BUILD_APP))
 ]
