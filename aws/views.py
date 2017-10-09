@@ -91,9 +91,10 @@ def task_status(request, owner, repo_name, change_pk, build_pk, task_slug):
             'finished': task.is_finished and no_more_logs,
         }), content_type="application/json")
 
+
 def current_tasks(request):
     return render(request, 'aws/current_tasks.html', {
-        'created': Task.objects.created(),
-        'started': Task.objects.started(),
-        'recents': Task.objects.recently_finished(),
+        'created': Task.objects.created().order_by('-updated'),
+        'started': Task.objects.started().order_by('-updated'),
+        'recents': Task.objects.recently_finished().order_by('-updated'),
     })
