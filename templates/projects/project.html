@@ -5,7 +5,7 @@
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
     </ol>
-    <h1>
+    <h1 class="avatar">
         <img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.name }}
         <a class="exit float-right" href="{{ project.repository.html_url }}"><i class="fa fa-github" aria-hidden="true"></i></a>
         <img class="exit float-right" src="{{ project.get_shield_url }}">
@@ -27,7 +27,7 @@
     {% for change in project.changes.active %}
         <tr scope="row">
             <td class="minimal"><a href="{{ change.get_absolute_url }}">{{ change.title }}</a></td>
-            <td class="minimal avatar"><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.user }}</td>
+            <td class="minimal avatar"><img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}">{{ change.user }}</td>
             <td>{{ change.description }}</td>
             <td class="minimal">{{ change.created|date:"j M Y, H:i" }}</td>
             <td class="minimal">{{ change.updated|date:"j M Y, H:i" }}</td>

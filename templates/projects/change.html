@@ -4,10 +4,10 @@
   <div>
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-        <li class="breadcrumb-item"><a href="{{ project.get_absolute_url }}"><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar"> {{ project.repository.name }}</a></li>
+        <li class="breadcrumb-item avatar"><a href="{{ project.get_absolute_url }}"><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}"> {{ project.repository.name }}</a></li>
     </ol>
-    <h1>
-        <img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}" class="avatar">{{ change.title }} - {{ change.description }}
+    <h1 class="avatar">
+        <img src="{{ change.user.avatar_url }}" alt="Github avatar for {{ change.user }}">{{ change.title }} - {{ change.description }}
         <a href="{{ change.html_url }}"><i class="fa fa-github exit float-right" aria-hidden="true"></i></a>
         <i id='spinner' class="fa fa-spinner fa-spin fa-fw float-right hidden"></i>
         <i id='error' class="fa fa-exclamation-triangle float-right hidden"></i>
