@@ -8,6 +8,7 @@
             <tr>
                 <th>Project</th>
                 <th class="minimal"># Open changes</th>
+                <th class="minimal">Build Status</th>
                 <th></th>
             </tr>
         </thead>
@@ -20,6 +21,7 @@
                     </a>
                 </td>
                 <td class="minimal">{{ project.changes.active.count }}</td>
+                <td class="minimal"><img class="exit float-right" src="{{ project.get_shield_url }}"></td>
                 <td class="minimal"><a href="{{ project.repository.html_url }}"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></td>
             </tr>
     {% endfor %}
