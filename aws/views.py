@@ -94,7 +94,13 @@ def task_status(request, owner, repo_name, change_pk, build_pk, task_slug):
 
 def current_tasks(request):
     return render(request, 'aws/current_tasks.html', {
-        'created': Task.objects.created().order_by('-updated'),
-        'started': Task.objects.started().order_by('-updated'),
+        'created': Task.objects.created().filter(build__status__in=(
+                        Build.STATUS_CREATED,
+                        Build.STATUS_RUNNING)
+                    ).order_by('-updated'),
+        'started': Task.objects.started().filter(build__status__in=(
+                        Build.STATUS_CREATED,
+                        Build.STATUS_RUNNING)
+                    ).order_by('-updated'),
         'recents': Task.objects.recently_finished().order_by('-updated'),
     })
