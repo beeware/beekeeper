@@ -24,10 +24,14 @@
         <tbody id="tasks">
         {% for task in started %}
             <tr scope="row">
-                <td><img src="{{ task.build.change.project.repository.owner.avatar_url }}" alt="Github avatar for {{ task.build.change.project.repository.owner }}" class="avatar"><a href="{{ task.build.change.project.get_absolute_url }}">{{ task.build.change.project.repository.full_name }}</a></td>
+                <td class="minimal avatar">
+                    <a href="{{ task.build.change.project.get_absolute_url }}">
+                        <img src="{{ task.build.change.project.repository.owner.avatar_url }}" alt="Github avatar for {{ task.build.change.project.repository.owner }}">{{ task.build.change.project.repository.full_name }}
+                    </a>
+                </td>
 
                 <td class="minimal"><a href="{{ task.build.change.get_absolute_url }}">{{ task.build.change.title }}</a></td>
-                <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}" class="avatar">{{ task.build.change.user }}</td>
+                <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}">{{ task.build.change.user }}</td>
                 <td>{{ task.build.change.description }}</td>
 
                 <td><a href="{{ task.get_absolute_url }}">{{ task.phase }}: {{ task.name }}</a></td>
@@ -57,10 +61,16 @@
         <tbody id="tasks">
         {% for task in created %}
             <tr scope="row">
-                <td><img src="{{ task.build.change.project.repository.owner.avatar_url }}" alt="Github avatar for {{ task.build.change.project.repository.owner }}" class="avatar"><a href="{{ task.build.change.project.get_absolute_url }}">{{ task.build.change.project.repository.full_name }}</a></td>
+                <td class="minimal avatar">
+                    <a href="{{ task.build.change.project.get_absolute_url }}">
+                        <img src="{{ task.build.change.project.repository.owner.avatar_url }}" alt="Github avatar for {{ task.build.change.project.repository.owner }}">{{ task.build.change.project.repository.full_name }}
+                    </a>
+                </td>
 
                 <td class="minimal"><a href="{{ task.build.change.get_absolute_url }}">{{ task.build.change.title }}</a></td>
-                <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}" class="avatar">{{ task.build.change.user }}</td>
+                <td class="minimal avatar">
+                    <img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}">{{ task.build.change.user }}
+                </td>
                 <td>{{ task.build.change.description }}</td>
 
                 <td><a href="{{ task.get_absolute_url }}">{{ task.phase }}: {{ task.name }}</a></td>
@@ -89,10 +99,16 @@
         <tbody id="tasks">
         {% for task in recents %}
             <tr scope="row">
-                <td><img src="{{ task.build.change.project.repository.owner.avatar_url }}" alt="Github avatar for {{ task.build.change.project.repository.owner }}" class="avatar"><a href="{{ task.build.change.project.get_absolute_url }}">{{ task.build.change.project.repository.full_name }}</a></td>
+                <td class="minimal avatar">
+                    <a href="{{ task.build.change.project.get_absolute_url }}">
+                        <img src="{{ task.build.change.project.repository.owner.avatar_url }}" alt="Github avatar for {{ task.build.change.project.repository.owner }}">{{ task.build.change.project.repository.full_name }}
+                    </a>
+                </td>
 
                 <td class="minimal"><a href="{{ task.build.change.get_absolute_url }}">{{ task.build.change.title }}</a></td>
-                <td class="minimal avatar"><img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}" class="avatar">{{ task.build.change.user }}</td>
+                <td class="minimal avatar">
+                    <img src="{{ task.build.change.user.avatar_url }}" alt="Github avatar for {{ task.build.change.user }}">{{ task.build.change.user }}
+                </td>
                 <td>{{ task.build.change.description }}</td>
 
                 <td><a href="{{ task.get_absolute_url }}">{{ task.phase }}: {{ task.name }}</a></td>

@@ -14,7 +14,11 @@
         <tbody>
     {% for project in projects %}
             <tr>
-                <td><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar"><a href="{{ project.get_absolute_url }}">{{ project.repository.full_name }}</a></td>
+                <td class="minimal">
+                    <a href="{{ project.get_absolute_url }}">
+                        <img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}">{{ project.repository.full_name }}
+                    </a>
+                </td>
                 <td class="minimal">{{ project.changes.active.count }}</td>
                 <td class="minimal"><a href="{{ project.repository.html_url }}"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></td>
             </tr>
@@ -37,7 +41,11 @@
     {% for project in new_projects %}
             <tr>
                 <td class="minimal"><input type="checkbox" name="projects" value="{{ project.id }}"></td>
-                <td><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar"><a href="{{ project.get_absolute_url }}">{{ project.repository.full_name }}</a></td>
+                <td class="minimal">
+                    <a href="{{ project.get_absolute_url }}">
+                        <img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.full_name }}
+                    </a>
+                </td>
                 <td class="minimal"><a href="{{ project.repository.html_url }}"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></td>
             </tr>
     {% endfor %}
