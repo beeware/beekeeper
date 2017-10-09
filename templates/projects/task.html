@@ -9,7 +9,7 @@
         <li class="breadcrumb-item"><a href="{{ build.get_absolute_url }}">Build {{ build.commit.display_sha }}</a></li>
     </ol>
 
-    <h1>Build {{ build.commit.display_sha }}: {{ task.name }}
+    <h1><span>Build {{ build.commit.display_sha }}: {{ task.name }}<span>
         <a href="{{ build.change.html_url }}"><i class="fa fa-github exit float-right" aria-hidden="true"></i></a>
         <i id='spinner' class="fa fa-spinner fa-spin fa-fw float-right hidden"></i>
         <i id='error' class="fa fa-exclamation-triangle float-right hidden"></i>

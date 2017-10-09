@@ -5,8 +5,8 @@
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
     </ol>
-    <h1 class="avatar">
-        <img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.name }}
+    <h1>
+        <span class="avatar"><img src="{{ project.repository.owner.avatar_url }}" alt="Github avatar for {{ project.repository.owner }}" class="avatar">{{ project.repository.name }}</span>
         <a class="exit float-right" href="{{ project.repository.html_url }}"><i class="fa fa-github" aria-hidden="true"></i></a>
         <img class="exit float-right" src="{{ project.get_shield_url }}">
     </h1>

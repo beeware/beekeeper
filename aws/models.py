@@ -59,7 +59,6 @@ class TaskQuerySet(models.QuerySet):
             status__in=[
                 Task.STATUS_DONE,
                 Task.STATUS_ERROR,
-                Task.STATUS_STOPPING,
                 Task.STATUS_STOPPED,
             ],
             updated__gt=timezone.now() - timedelta(hours=1)

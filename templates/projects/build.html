@@ -9,7 +9,7 @@
 
     </ol>
     <form method="POST">{% csrf_token %}
-    <h1>Build {{ build.commit.display_sha }}
+    <h1><span>Build {{ build.commit.display_sha }}<span>
         <a href="{{ change.html_url }}"><i class="fa fa-github exit float-right" aria-hidden="true"></i></a>
         <i id='spinner' class="fa fa-spinner fa-spin fa-fw float-right hidden"></i>
         <i id='error' class="fa fa-exclamation-triangle float-right hidden"></i>
