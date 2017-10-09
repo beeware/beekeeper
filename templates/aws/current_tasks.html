@@ -54,8 +54,6 @@
                 <th>Description</th>
 
                 <th>Task</th>
-                <th class="minimal">Status</th>
-                <th class="minimal">Result</th>
             </tr>
         </thead>
         <tbody id="tasks">
@@ -74,8 +72,6 @@
                 <td>{{ task.build.change.description }}</td>
 
                 <td><a href="{{ task.get_absolute_url }}">{{ task.phase }}: {{ task.name }}</a></td>
-                <td class="minimal" id='{{ task.slug }}-status'>{{ task.get_status_display }}</td>
-                <td class="minimal" id='{{ task.slug }}-result'>{% result task.result %}</td>
             </tr>
         {% endfor %}
         </tbody>
