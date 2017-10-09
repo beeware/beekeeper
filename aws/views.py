@@ -6,6 +6,8 @@ from django.conf import settings
 from django.http import Http404, HttpResponse
 from django.shortcuts import render
 
+from project.models import Build
+
 from .models import Task
 
 
