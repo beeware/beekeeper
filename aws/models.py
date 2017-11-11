@@ -358,23 +358,35 @@ class Profile(models.Model):
         {'name': 't2.large',    'vcpu': 2,  'ecu': None,  'mem': 8,     'price': 0.094},
         {'name': 't2.xlarge',   'vcpu': 4,  'ecu': None,  'mem': 16,    'price': 0.188},
         {'name': 't2.2xlarge',  'vcpu': 8,  'ecu': None,  'mem': 32,    'price': 0.376},
+
         {'name': 'm4.large',    'vcpu': 2,  'ecu': 6.5,   'mem': 8,     'price': 0.1},
         {'name': 'm4.xlarge',   'vcpu': 4,  'ecu': 13,    'mem': 16,    'price': 0.2},
         {'name': 'm4.2xlarge',  'vcpu': 8,  'ecu': 26,    'mem': 32,    'price': 0.4},
         {'name': 'm4.4xlarge',  'vcpu': 16, 'ecu': 53.5,  'mem': 64,    'price': 0.8},
         {'name': 'm4.10xlarge', 'vcpu': 40, 'ecu': 124.5, 'mem': 160,   'price': 2.0},
         {'name': 'm4.16xlarge', 'vcpu': 64, 'ecu': 188,   'mem': 256,   'price': 3.2},
+
+        {'name': 'c5.large',    'vcpu': 2,  'ecu': 8,     'mem': 3.75,  'price': 0.085},
+        {'name': 'c5.xlarge',   'vcpu': 4,  'ecu': 16,    'mem': 7.5,   'price': 0.17},
+        {'name': 'c5.2xlarge',  'vcpu': 8,  'ecu': 31,    'mem': 15,    'price': 0.34},
+        {'name': 'c5.4xlarge',  'vcpu': 16, 'ecu': 62,    'mem': 30,    'price': 0.68},
+        {'name': 'c5.9xlarge',  'vcpu': 36, 'ecu': 139,   'mem': 60,    'price': 1.53},
+        {'name': 'c5.18xlarge', 'vcpu': 72, 'ecu': 278,   'mem': 60,    'price': 3.06},
+
         {'name': 'c4.large',    'vcpu': 2,  'ecu': 8,     'mem': 3.75,  'price': 0.1},
         {'name': 'c4.xlarge',   'vcpu': 4,  'ecu': 16,    'mem': 7.5,   'price': 0.199},
         {'name': 'c4.2xlarge',  'vcpu': 8,  'ecu': 31,    'mem': 15,    'price': 0.398},
         {'name': 'c4.4xlarge',  'vcpu': 16, 'ecu': 62,    'mem': 30,    'price': 0.796},
         {'name': 'c4.8xlarge',  'vcpu': 36, 'ecu': 132,   'mem': 60,    'price': 1.591},
+
         {'name': 'p2.xlarge',   'vcpu': 4,  'ecu': 12,    'mem': 61,    'price': 0.9},
         {'name': 'p2.8xlarge',  'vcpu': 32, 'ecu': 94,    'mem': 488,   'price': 7.2},
         {'name': 'p2.16xlarge', 'vcpu': 64, 'ecu': 188,   'mem': 732,   'price': 14.4},
+
         {'name': 'g3.4xlarge',  'vcpu': 16, 'ecu': 47,    'mem': 122,   'price': 1.14},
         {'name': 'g3.8xlarge',  'vcpu': 32, 'ecu': 94,    'mem': 244,   'price': 2.28},
         {'name': 'g3.16xlarge', 'vcpu': 64, 'ecu': 188,   'mem': 488,   'price': 4.56},
+
         {'name': 'r4.large',    'vcpu': 2,  'ecu': 7,     'mem': 15.25, 'price': 0.133},
         {'name': 'r4.xlarge',   'vcpu': 4,  'ecu': 13.5,  'mem': 30.5,  'price': 0.266},
         {'name': 'r4.2xlarge',  'vcpu': 8,  'ecu': 27,    'mem': 61,    'price': 0.532},
