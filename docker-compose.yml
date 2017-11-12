@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+    volumes:
+      - ./postgres:/var/lib/postgresql/data/
+  migrate:
+    build: .
+    env_file: docs/sample.env
+    command: ./wait-for-it.sh db:5432 -- python manage.py migrate --noinput
+    volumes:
+      - .:/code
+    depends_on:
+      - db
+  web:
+    build: .
+    env_file: docs/sample.env
+    command: ./wait-for-it.sh db:5432 -- python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - migrate
+      - db

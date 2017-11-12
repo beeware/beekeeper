@@ -25,19 +25,18 @@ To deploy a new BeeKeeper instance, clone this repo, and then run::
 Local Development
 ~~~~~~~~~~~~~~~~~
 
-To get started developing on BeeKeeper locally, follow the steps below.
+To get started developing on BeeKeeper locally, use `docker-compose`.
 Unfortunately, these steps have only been tested on MacOS.
 
-- Install `Homebrew`_
-- Install postgresql: :code:`brew install postgresql`
-- Start postgresql: :code:`brew services start postgresql`
-- Create a DB for beekeeper: :code:`createdb beekeeper`
+- Install `docker-compose`_
 - Clone the beekeeper repo.
-- In the beekeeper repo directory, copy the sample env file to the top of the directory: :code:`cp docs/sample.env .env` 
-- Create a virtualenvironment
-- Install packages: :code:`pip install -r requirements.txt`
-- Apply migrations: :code:`./manage.py migrate`
-- Start the server: :code:`./manage.py runserver`
+- In the beekeeper repo directory: :code:`docker-compose up`
+- You should be able to browse to http://localhost:8000 and see beekeeper working!
+
+To get an admin user:
+
+- :code:`ctrl-c` to quit the server
+- :code:`docker-compose run web python manage.py createsuperuser`
 
 Django
 ~~~~~~
@@ -198,6 +197,6 @@ want to contribute code, please `fork the code`_ and `submit a pull request`_.
 .. _log them on Github: https://github.com/pybee/beekeeper/issues
 .. _fork the code: https://github.com/pybee/beekeeper
 .. _submit a pull request: https://github.com/pybee/beekeeper/pulls
-.. _Homebrew: https://brew.sh/
+.. _docker-compose: https://docs.docker.com/compose/install/#install-compose
 .. |heroku| image:: https://www.herokucdn.com/deploy/button.svg
     :target: https://heroku.com/deploy?template=https://github.com/pybee/beekeeper/tree/master
