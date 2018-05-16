@@ -39,8 +39,8 @@ To get an admin user:
 - :code:`ctrl-c` to quit the server
 - :code:`docker-compose run web python manage.py createsuperuser`
 
-You can also change the `docker-compose.yml` to use a local `.env` instead
-of `docs/sample.env`, and add your own secret variables
+You can also change the :code:`docker-compose.yml` to use a local :code:`.env`
+instead of :code:`docs/sample.env`, and add your own secret variables
 
 Django
 ~~~~~~

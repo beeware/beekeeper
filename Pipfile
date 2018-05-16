@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+
+[packages]
+dj-database-url = "==0.4.1"
+rho-django-user = "*"
+gunicorn = "==19.6.0"
+"psycopg2" = "==2.6.2"
+whitenoise = "==3.2"
+redis = "==2.10.5"
+celery = "==4.0.2"
+django-storages = "==1.5.2"
+"boto3" = "==1.4.4"
+sendgrid-django = "==4.0.4"
+requests = "==2.18.1"
+"github3.py" = "==0.9.6"
+python-dotenv = "==0.6.5"
+Django = "<1.11"
+PyYAML = "==3.12"
+sphinx = "*"
+sphinx-rtd-theme = "*"
+
+[requires]
+python_version = "3.6"

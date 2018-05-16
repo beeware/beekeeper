@@ -1,12 +1,33 @@
-BeeKeeper
-=========
+.. raw:: html
+
+    <style>
+        .row {clear: both}
+
+        .column img {border: 1px solid black;}
+
+        @media only screen and (min-width: 1000px),
+               only screen and (min-width: 500px) and (max-width: 768px){
+
+            .column {
+                padding-left: 5px;
+                padding-right: 5px;
+                float: left;
+            }
+
+            .column3  {
+                width: 33.3%;
+            }
+
+            .column2  {
+                width: 50%;
+            }
+        }
+    </style>
 
 .. image:: _static/logo.png
     :target: https://pybee.org/project/projects/tools/beekeeper/
 
-BeeKeeper is a tool for running Docker containers on demand, with GitHub status reporting. As a side effect, this
-makes it very effective as an automated code review tool, a CI system, an automated deployment system, and many
-other things.
+.. include:: ../README.rst
 
 .. toctree::
    :maxdepth: 2
