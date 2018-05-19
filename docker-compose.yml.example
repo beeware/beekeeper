@@ -24,3 +24,5 @@ services:
     depends_on:
       - migrate
       - db
+    stdin_open: true
+    tty: true

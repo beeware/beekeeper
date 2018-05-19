@@ -30,6 +30,7 @@ Unfortunately, these steps have only been tested on MacOS.
 
 - Install `docker-compose`_
 - Clone the beekeeper repo.
+- Create your own config: :code:`cp docker-compose.yml.example docker-compose.yml`
 - In the beekeeper repo directory: :code:`docker-compose up`
 - You should be able to browse to http://localhost:8000 and see beekeeper working!
 
@@ -37,6 +38,9 @@ To get an admin user:
 
 - :code:`ctrl-c` to quit the server
 - :code:`docker-compose run web python manage.py createsuperuser`
+
+You can also change the :code:`docker-compose.yml` to use a local :code:`.env`
+instead of :code:`docs/sample.env`, and add your own secret variables
 
 Django
 ~~~~~~
