@@ -1,0 +1,4 @@
+include AUTHORS
+include CONTRIBUTING.md
+include LICENSE
+recursive-include beekeeper *.py
