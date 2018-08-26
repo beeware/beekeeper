@@ -6,27 +6,34 @@ import yaml
 from beekeeper.config import load_task_configs
 
 
-def run_task(name, phase, descriptor, project_dir, is_critical, environment, **extra):
+def run_task(name, phase, image, project_dir, is_critical, environment, **extra):
     print()
     print("---------------------------------------------------------------------------")
-    print(f"{phase}: {name}".format(phase=phase, name=name))
+    print("{phase}: {name}".format(phase=phase, name=name))
     print("---------------------------------------------------------------------------")
+    env_args = ' '.join(
+        '-e {var}="{value}"'.format(var=var, value=value)
+        for var, value in environment.items()
+    )
     result = subprocess.run(
-        f'docker run -v {project_dir}:/app {descriptor}',
+        'docker run -v {project_dir}:/app {env_args} {image}'.format(
+            env_args=env_args,
+            project_dir=project_dir,
+            image=image
+        ),
         shell=True,
         cwd=project_dir,
-        env=environment
     )
 
     print("---------------------------------------------------------------------------")
     if result.returncode == 0:
-        print(f"PASS: {name}")
+        print("PASS: {name}".format(name=name))
         return True
     elif not is_critical:
-        print(f"FAIL (non critical): {name}")
+        print("FAIL (non critical): {name}".format(name=name))
         return True
     else:
-        print(f"FAIL: {name}")
+        print("FAIL: {name}".format(name=name))
         return False
 
 
@@ -44,7 +51,11 @@ def run_project(project_dir, action='pull_request'):
             if failures:
                 break
             phase = task['phase']
-            print(f"***** PHASE {phase} *************************************************************".format(**task))
+            print("***** PHASE {phase} *************************************************************".format(**task))
+
+        task['environment'].update({
+            'TASK': task['slug'].split(':')[-1],
+        })
 
         success = run_task(project_dir=project_dir, **task)
 

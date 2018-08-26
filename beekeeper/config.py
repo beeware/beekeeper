@@ -6,15 +6,31 @@ def load_task_configs(config):
             if 'subtasks' in phase_config:
                 for task_configs in phase_config['subtasks']:
                     for task_name, task_config in task_configs.items():
-                        # If a descriptor is provided at the subtask level,
+                        # If an image is provided at the subtask level,
                         # use it; otherwise use the phase's task definition.
-                        descriptor = None
+                        image = None
                         if task_config:
-                            descriptor = task_config.get('task', None)
-                        if descriptor is None:
-                            descriptor = phase_config.get('task', None)
-                        if descriptor is None:
-                            raise ValueError("Subtask %s in phase %s task %s doesn't contain a task descriptor." % (
+                            image = task_config.get('image', None)
+                            if image is None:
+                                # Backwards compatibility - look for a
+                                # 'task' instead of 'image';
+                                # if it exists, prepend 'beekeeper/'
+                                try:
+                                    image = 'beekeeper/' + task_config['task']
+                                except KeyError:
+                                    image = None
+                        if image is None:
+                            image = phase_config.get('image', None)
+                            if image is None:
+                                # Backwards compatibility - look for a
+                                # 'task' instead of 'image';
+                                # if it exists, prepend 'beekeeper/'
+                                try:
+                                    image = 'beekeeper/' + phase_config['task']
+                                except KeyError:
+                                    image = None
+                        if image is None:
+                            raise ValueError("Subtask %s in phase %s task %s doesn't contain a task image." % (
                                 task_name, phase, phase_name
                             ))
 
@@ -37,10 +53,9 @@ def load_task_configs(config):
                             'is_critical': task_config.get('critical', True),
                             'environment': task_env,
                             'profile_slug': task_profile,
-                            'descriptor': descriptor,
+                            'image': image,
                         })
-
-            elif 'task' in phase_config:
+            elif 'image' in phase_config:
                 task_data.append({
                     'name': phase_config.get('name', phase_name),
                     'slug': phase_name,
@@ -48,10 +63,22 @@ def load_task_configs(config):
                     'is_critical': phase_config.get('critical', True),
                     'environment': phase_config.get('environment', {}),
                     'profile_slug': phase_config.get('profile', 'default'),
-                    'descriptor': phase_config['task'],
+                    'image': phase_config['image'],
+                })
+            elif 'task' in phase_config:
+                # Backward compatibility - look for a
+                # 'task' instead of 'image'; if it exists, prepend 'beekeeper/'
+                task_data.append({
+                    'name': phase_config.get('name', phase_name),
+                    'slug': phase_name,
+                    'phase': phase,
+                    'is_critical': phase_config.get('critical', True),
+                    'environment': phase_config.get('environment', {}),
+                    'profile_slug': phase_config.get('profile', 'default'),
+                    'image': 'beekeeper/' + phase_config['task'],
                 })
             else:
-                raise ValueError("Phase %s task %s doesn't contain a task or subtask descriptor." % (
+                raise ValueError("Phase %s task %s doesn't contain a task or subtask image." % (
                     phase, phase_name
                 ))
     return task_data
