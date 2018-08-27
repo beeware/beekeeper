@@ -115,6 +115,8 @@ class Task(models.Model):
 
     error = models.TextField(blank=True)
 
+    image = models.CharField(max_length=100, null=True, blank=True)
+
     class Meta:
         ordering = ('phase', 'name',)
         unique_together = [('build', 'slug')]
