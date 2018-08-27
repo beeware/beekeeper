@@ -245,7 +245,7 @@ class Task(models.Model):
 
         response = ecs_client.run_task(
             cluster=settings.AWS_ECS_CLUSTER_NAME,
-            taskDefinition=self.descriptor,
+            taskDefinition=self.image,
             overrides={
                 'containerOverrides': [container_definition]
             }
