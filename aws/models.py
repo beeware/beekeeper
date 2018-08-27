@@ -174,7 +174,7 @@ class Task(models.Model):
     @property
     def log_stream_name(self):
         return '%s/%s/%s' % (
-            self.descriptor, self.descriptor, self.arn.rsplit('/', 1)[1]
+            self.image, self.image, self.arn.rsplit('/', 1)[1]
         )
 
     @property
@@ -215,7 +215,7 @@ class Task(models.Model):
         #  * Project variables for all tasks
         #  * Project variables for a specific task
         for project in [None, self.build.change.project]:
-            for descriptor in ['*', self.descriptor]:
+            for descriptor in ['*', self.image]:
                 for var in ProjectSetting.objects.filter(project=project, descriptor=descriptor):
                     environment[var.key] = var.value
 
@@ -223,7 +223,7 @@ class Task(models.Model):
         environment.update(self.environment)
 
         container_definition = {
-            'name': self.descriptor,
+            'name': self.image,
             'environment': [
                 {
                     'name': str(key),

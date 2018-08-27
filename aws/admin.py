@@ -6,7 +6,7 @@ from .models import Task, Profile, Instance
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ['project', 'build_pk', 'name', 'phase', 'is_critical', 'descriptor', 'status', 'result']
+    list_display = ['project', 'build_pk', 'name', 'phase', 'is_critical', 'image', 'status', 'result']
     list_filter = ['status', 'result', 'is_critical']
     raw_id_fields = ['build',]
 
