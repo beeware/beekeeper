@@ -110,7 +110,6 @@ class Task(models.Model):
 
     environment = postgres.JSONField(blank=True)
     profile_slug = models.CharField(max_length=100, default='default')
-    descriptor = models.CharField(max_length=100)
     arn = models.CharField(max_length=100, null=True, blank=True)
 
     error = models.TextField(blank=True)
