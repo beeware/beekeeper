@@ -221,7 +221,7 @@ class Task(models.Model):
         #  * Project variables for all tasks
         #  * Project variables for a specific task
         for project in [None, self.build.change.project]:
-            for descriptor in ['*', self.image]:
+            for descriptor in ['*', self.aws_task_name]:
                 for var in ProjectSetting.objects.filter(project=project, descriptor=descriptor):
                     environment[var.key] = var.value
 
@@ -229,7 +229,7 @@ class Task(models.Model):
         environment.update(self.environment)
 
         container_definition = {
-            'name': self.image,
+            'name': self.aws_task_name,
             'environment': [
                 {
                     'name': str(key),
