@@ -181,6 +181,12 @@ class Task(models.Model):
     def profile(self):
         return Profile.objects.get(slug=self.profile_slug)
 
+    @property
+    def aws_task_name(self):
+        if '/' in self.image:
+            return self.image.split('/')[1]
+        return self.image
+
     def full_status_display(self):
         if self.status == Task.STATUS_ERROR:
             return "Error: %s" % self.error
@@ -245,7 +251,7 @@ class Task(models.Model):
 
         response = ecs_client.run_task(
             cluster=settings.AWS_ECS_CLUSTER_NAME,
-            taskDefinition=self.image,
+            taskDefinition=self.aws_task_name,
             overrides={
                 'containerOverrides': [container_definition]
             }
