@@ -110,10 +110,11 @@ class Task(models.Model):
 
     environment = postgres.JSONField(blank=True)
     profile_slug = models.CharField(max_length=100, default='default')
-    descriptor = models.CharField(max_length=100)
     arn = models.CharField(max_length=100, null=True, blank=True)
 
     error = models.TextField(blank=True)
+
+    image = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         ordering = ('phase', 'name',)
@@ -172,12 +173,18 @@ class Task(models.Model):
     @property
     def log_stream_name(self):
         return '%s/%s/%s' % (
-            self.descriptor, self.descriptor, self.arn.rsplit('/', 1)[1]
+            self.image, self.image, self.arn.rsplit('/', 1)[1]
         )
 
     @property
     def profile(self):
         return Profile.objects.get(slug=self.profile_slug)
+
+    @property
+    def aws_task_name(self):
+        if '/' in self.image:
+            return self.image.split('/')[1]
+        return self.image
 
     def full_status_display(self):
         if self.status == Task.STATUS_ERROR:
@@ -213,7 +220,7 @@ class Task(models.Model):
         #  * Project variables for all tasks
         #  * Project variables for a specific task
         for project in [None, self.build.change.project]:
-            for descriptor in ['*', self.descriptor]:
+            for descriptor in ['*', self.aws_task_name]:
                 for var in ProjectSetting.objects.filter(project=project, descriptor=descriptor):
                     environment[var.key] = var.value
 
@@ -221,7 +228,7 @@ class Task(models.Model):
         environment.update(self.environment)
 
         container_definition = {
-            'name': self.descriptor,
+            'name': self.aws_task_name,
             'environment': [
                 {
                     'name': str(key),
@@ -243,7 +250,7 @@ class Task(models.Model):
 
         response = ecs_client.run_task(
             cluster=settings.AWS_ECS_CLUSTER_NAME,
-            taskDefinition=self.descriptor,
+            taskDefinition=self.aws_task_name,
             overrides={
                 'containerOverrides': [container_definition]
             }
