@@ -173,7 +173,7 @@ class Task(models.Model):
     @property
     def log_stream_name(self):
         return '%s/%s/%s' % (
-            self.image, self.image, self.arn.rsplit('/', 1)[1]
+            self.aws_task_name, self.aws_task_name, self.arn.rsplit('/', 1)[1]
         )
 
     @property
