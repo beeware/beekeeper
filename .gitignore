@@ -102,3 +102,6 @@ runtime/
 
 # active docker-compose
 docker-compose.yml
+
+# Active static files
+config/staticfiles/
