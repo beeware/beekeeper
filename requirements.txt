@@ -5,7 +5,7 @@ gunicorn==19.6.0
 psycopg2==2.7.5
 whitenoise==3.2
 redis==2.10.5
-celery==4.0.2
+celery==4.2.1
 django-storages==1.5.2
 boto3==1.4.4
 sendgrid_django==4.0.4
