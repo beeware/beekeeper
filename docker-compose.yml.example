@@ -3,27 +3,30 @@ version: '3'
 services:
   caddy:
     image: abiosoft/caddy
-    command: "-host 0.0.0.0 ${CADDY_OPTIONS:--port 8080 }  'proxy / web:8000' 'log stdout'"
+    command: "${CADDY_OPTIONS} 'proxy / web:8000'"
     ports:
-      - "${HTTP_PORT:-8080}:8080"
-      - "${HTTPS_PORT:-8443}:8443"
+      - "${HTTP_PORT:-8080}:80"
+      - "${HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./.caddy:/root/.caddy
   db:
     image: postgres:9.6.5
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - ./postgres_data:/var/lib/postgresql/data/
+    env_file: .env
   redis:
     image: "redis:alpine"
   migrate:
     build: .
-    env_file: docs/sample.env
-    command: python manage.py migrate --noinput
+    env_file: .env
+    command: ./wait-for-it.sh db:5432 -- python manage.py migrate --noinput
     volumes:
       - .:/code
     depends_on:
       - db
   static:
     build: .
-    env_file: docs/sample.env
+    env_file: .env
     command: python manage.py collectstatic --noinput
     volumes:
       - .:/code
@@ -33,7 +36,7 @@ services:
   web:
     build: .
     env_file: .env
-    command: gunicorn -b 0.0.0.0:8000 config.wsgi
+    command: gunicorn --access-logfile - -b 0.0.0.0:8000 config.wsgi
     volumes:
       - .:/code
     ports:
@@ -45,6 +48,8 @@ services:
       - redis
     stdin_open: true
     tty: true
+    environment:
+      - REDIS_URL=redis://redis
   celery:
     build: .
     command: celery worker -c 2 -A config --loglevel=INFO
