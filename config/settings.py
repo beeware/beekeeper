@@ -212,3 +212,19 @@ SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 GITHUB_WEBHOOK_KEY = os.environ.get('GITHUB_WEBHOOK_KEY')
 GITHUB_USERNAME = os.environ.get('GITHUB_USERNAME')
 GITHUB_ACCESS_TOKEN = os.environ.get('GITHUB_ACCESS_TOKEN')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
