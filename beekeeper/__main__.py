@@ -12,6 +12,11 @@ def main():
         help='Specify the build action to run.',
     )
     parser.add_argument(
+        '--slug', '-s', dest='slug',
+        help='Specify the tasks to run (e.g., `beefore:pycodestyle` to run a specific task, '
+             'or `beefore` to run all tasks in a phase.',
+    )
+    parser.add_argument(
         'project_dir', nargs='?', default='.',
         help='Directory containing a configured BeeKeeper project.'
     )
@@ -19,7 +24,8 @@ def main():
 
     runner.run_project(
         project_dir=os.path.abspath(options.project_dir),
-        action=options.action
+        slug=options.slug,
+        action=options.action,
     )
 
 
