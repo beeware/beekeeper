@@ -37,11 +37,26 @@ def run_task(name, phase, image, project_dir, is_critical, environment, **extra)
         return False
 
 
-def run_project(project_dir, action='pull_request'):
+def run_project(project_dir, slug=None, action='pull_request'):
     with open(os.path.join(project_dir, 'beekeeper.yml')) as config_file:
         config = yaml.load(config_file.read())
 
-    tasks = load_task_configs(config[action])
+    all_tasks = load_task_configs(config[action])
+
+    if ':' in slug:
+        tasks = [
+            task
+            for task in all_tasks
+            if task['slug'] == slug
+        ]
+    elif slug:
+        tasks = [
+            task
+            for task in all_tasks
+            if task['slug'].startswith(slug + ':')
+        ]
+    else:
+        tasks = all_tasks
 
     phase = None
     successes = []
@@ -73,7 +88,7 @@ def run_project(project_dir, action='pull_request'):
             })
 
     print()
-    print("*************************************************************************".format(**task))
+    print("*************************************************************************")
     if failures:
         print(f"BeeKeeper suite failed in phase {phase}:")
         for result in failures:
