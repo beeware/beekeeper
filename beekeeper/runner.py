@@ -43,7 +43,7 @@ def run_project(project_dir, slug=None, action='pull_request'):
 
     all_tasks = load_task_configs(config[action])
 
-    if ':' in slug:
+    if slug and ':' in slug:
         tasks = [
             task
             for task in all_tasks
