@@ -9,7 +9,7 @@ celery==4.2.1
 django-storages==1.5.2
 boto3==1.4.4
 sendgrid_django==4.0.4
-requests==2.18.1
+requests==2.20.0
 github3.py==0.9.6
 PyYAML==5.1
 python-dotenv==0.6.5
