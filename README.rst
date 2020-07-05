@@ -1,5 +1,12 @@
+THIS PROJECT HAS BEEN ARCHIVED
+==============================
+
+**The BeeWare Project has stopped using BeeKeeper for CI; we have migrated all our CI to Github Actions.** 
+
 BeeKeeper
 =========
+
+
 
 BeeKeeper is a tool for running Docker containers on demand,
 with GitHub status reporting. As a side effect, this makes it very
